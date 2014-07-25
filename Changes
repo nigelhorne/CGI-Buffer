@@ -14,6 +14,7 @@ Revision history for CGI-Buffer
 	Use Test::Most instead of Test::More
 	Support HTTP_RANGE as well as Range
 	Added more JavaScript optimisations when optimise_level >= 2
+	Added a couple more tests in t/output.t
 
 0.69	Tue Apr  2 14:59:59 EDT 2013
 	Bumped minimum version of CGI::Info, needed for Cygwin

@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 
-use Test::Most tests => 89;
+use Test::Most tests => 91;
 use Test::TempDir;
 use Compress::Zlib;
 # use Test::NoWarnings;	# HTML::Clean has them
@@ -382,6 +382,7 @@ OUTPUT: {
 	#..........................................
 	$ENV{'SERVER_PROTOCOL'} = 'HTTP/1.1';
 	delete $ENV{'HTTP_ACCEPT_ENCODING'};
+	delete $ENV{'HTTP_TE'};
 	$ENV{'REQUEST_METHOD'} = 'GET';
 
 	($tmp, $filename) = tempfile();
@@ -394,7 +395,7 @@ OUTPUT: {
 	print $tmp "CGI::Buffer::set_options(optimise_content => 1, generate_304 => 0);\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
 	print $tmp "print \"\\n\\n\";\n";
-	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>\\t  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
+	print $tmp "print \"<HTML><BODY>Hello.<p><I>Foo</I> Bar<br><TABLE><TR><TD>foo</TD>\\t  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
 
@@ -406,6 +407,8 @@ OUTPUT: {
 	close $tmp;
 
 	ok(defined($output));
+	ok($output !~ /^Content-Encoding: gzip/m);
+	ok($output =~ /<I>Foo<\/I> Bar<br>/);
 	ok($output =~ /<TD>foo<\/TD><TD>bar<\/TD>/mi);
 	ok($output !~ /^Status: 304 Not Modified/mi);
 	ok($output =~ /^Content-Length:\s+(\d+)/m);
