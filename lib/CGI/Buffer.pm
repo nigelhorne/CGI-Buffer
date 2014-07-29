@@ -19,11 +19,11 @@ CGI::Buffer - Verify and Optimise CGI Output
 
 =head1 VERSION
 
-Version 0.70
+Version 0.71
 
 =cut
 
-our $VERSION = '0.70';
+our $VERSION = '0.71';
 
 =head1 SYNOPSIS
 
@@ -562,7 +562,7 @@ sub _optimise_content {
 	$body =~ s/\n\s+|\s+\n/\n/g;
 	$body =~ s/\t+/ /g;
 	$body =~ s/\s(\<.+?\>\s\<.+?\>)/$1/;
-	$body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/;
+	$body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/g;
 	$body =~ s/\<p\>\s/\<p\>/gi;
 	$body =~ s/\<\/p\>\s\<p\>/\<\/p\>\<p\>/gi;
 	$body =~ s/\<\/tr\>\s\<tr\>/\<\/tr\>\<tr\>/gi;
@@ -956,7 +956,7 @@ The licence for cgi_buffer is:
 
     This software is provided 'as is' without warranty of any kind."
 
-The reset of the program is Copyright 2011-2013 Nigel Horne,
+The rest of the program is Copyright 2011-2014 Nigel Horne,
 and is released under the following licence: GPL
 
 =cut

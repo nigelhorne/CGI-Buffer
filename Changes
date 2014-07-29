@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.71	Wed Apr  2 16:50:48 EDT 2014
+	Speed optimisation with some output
+
 0.70	Fri 13 Dec 10:24:45 EST 2013
 	Loop optimisation until complete for even smaller output
 	Use Test::Tempdir to create the temporary files when testing
@@ -14,7 +17,6 @@ Revision history for CGI-Buffer
 	Use Test::Most instead of Test::More
 	Support HTTP_RANGE as well as Range
 	Added more JavaScript optimisations when optimise_level >= 2
-	Added a couple more tests in t/output.t
 
 0.69	Tue Apr  2 14:59:59 EDT 2013
 	Bumped minimum version of CGI::Info, needed for Cygwin
@@ -316,4 +318,4 @@ Revision history for CGI-Buffer
 	If protocol isn't known, assume http
 
 0.01    Fri Jul 22 13:09:17 EDT 2011
-        First draft
+	First draft
