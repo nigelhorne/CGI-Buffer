@@ -19,6 +19,7 @@ t/js.t
 t/kwalitee.t
 t/last_mod.t
 t/manifest.t
+t/metrics.t
 t/noplan.t
 t/output.t
 t/pod-cm.t
