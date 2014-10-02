@@ -2,11 +2,8 @@ Revision history for CGI-Buffer
 
 0.71	Wed Apr  2 16:50:48 EDT 2014
 	Speed optimisation with some output
-<<<<<<< HEAD
-	Removed some unused modules, and defer loading others
-=======
 	Added the info option to init
->>>>>>> 96a769349199b9f89882e28f5b930f3453b68383
+	Removed some unused modules, and defer loading others
 
 0.70	Fri 13 Dec 10:24:45 EST 2013
 	Loop optimisation until complete for even smaller output
