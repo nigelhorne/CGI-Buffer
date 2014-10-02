@@ -657,7 +657,7 @@ Init allows a reference of the options to be passed. So both of these work:
     use CGI::Buffer;
     #...
     CGI::Buffer::init(generate_etag => 1);
-    CGI::Buffer::init({ generate_etag => 1 });
+    CGI::Buffer::init({ generate_etag => 1, info => CGI::Info->new() });
 
 Generally speaking, passing by reference is better since it copies less on to
 the stack.
@@ -691,6 +691,9 @@ sub init {
 	}
 	if(defined($params{generate_304})) {
 		$generate_304 = $params{generate_304};
+	}
+	if(defined($params{info}) && (!defined($info))) {
+		$info = $params{info};
 	}
 
 	# Unsafe options - must be called before output has been started
