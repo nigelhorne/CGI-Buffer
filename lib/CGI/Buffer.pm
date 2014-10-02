@@ -7,11 +7,7 @@ use Digest::MD5;
 use IO::String;
 use CGI::Info;
 use Carp;
-use Encode;
-use DateTime;
 use HTTP::Date;
-use File::Spec;
-use Storable;
 
 =head1 NAME
 
@@ -242,10 +238,13 @@ END {
 	# Generate the eTag before compressing, since the compressed data
 	# includes the mtime field which changes thus causing a different
 	# Etag to be generated
+	my $encode_loaded;
 	if($ENV{'SERVER_PROTOCOL'} &&
 	  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') &&
 	  $generate_etag && defined($body)) {
 		# encode to avoid "Wide character in subroutine entry"
+		require Encode;
+		$encode_loaded = 1;
 		$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 		push @o, "ETag: $etag";
 		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304) {
@@ -280,7 +279,11 @@ END {
 			Compress::Zlib->import;
 
 			# Avoid 'Wide character in memGzip'
-			my $nbody = Compress::Zlib::memGzip(\encode_utf8($body));
+			unless($encode_loaded) {
+				require Encode;
+				$encode_loaded = 1;
+			}
+			my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
 			if(length($nbody) < length($body)) {
 				$body = $nbody;
 				push @o, "Content-Encoding: $encoding";
@@ -290,6 +293,8 @@ END {
 	}
 
 	if($cache) {
+		require Storable;
+
 		my $cache_hash;
 		my $key = _generate_key();
 
@@ -340,6 +345,10 @@ END {
 			  ($status == 200)) {
 				if($ENV{'HTTP_IF_NONE_MATCH'}) {
 					if(!defined($etag)) {
+						unless($encode_loaded) {
+							require Encode;
+							$encode_loaded = 1;
+						}
 						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 					}
 					if(($etag =~ /\Q$ENV{'HTTP_IF_NONE_MATCH'}\E/) && $generate_304) {

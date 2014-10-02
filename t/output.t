@@ -14,6 +14,7 @@ use warnings;
 use Test::Most tests => 89;
 use Test::TempDir;
 use Compress::Zlib;
+use DateTime;
 # use Test::NoWarnings;	# HTML::Clean has them
 
 BEGIN {
