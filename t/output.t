@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 
-use Test::Most tests => 89;
+use Test::Most tests => 94;
 use Test::TempDir;
 use Compress::Zlib;
 use DateTime;
@@ -282,6 +282,36 @@ OUTPUT: {
 	ok(length($body) eq $length);
 	ok($headers !~ /^Status: 500/m);
 	ok($body =~ /<hr>A Line<hr>Foo/);
+
+	#..........................................
+	# Space left in tact after </em>
+	($tmp, $filename) = tempfile();
+	if($ENV{'PERL5LIB'}) {
+		foreach (split(':', $ENV{'PERL5LIB'})) {
+			print $tmp "use lib '$_';\n";
+		}
+	}
+	print $tmp "use CGI::Buffer { optimise_content => 1, lint_content => 0 };\n";
+	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
+	print $tmp "print \"\\n\\n\";\n";
+	print $tmp "print \"<HTML><BODY>\n<p><em>The Brass Band Portal</em> is visited some 500 times</BODY></HTML>\\n\";\n";
+
+	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+
+	$keep = $_;
+	undef $/;
+	$output = <$fout>;
+	$/ = $keep;
+
+	close $tmp;
+
+	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+	ok($headers =~ /^Content-Length:\s+(\d+)/m);
+	$length = $1;
+	ok(defined($length));
+	ok(length($body) eq $length);
+	ok($headers !~ /^Status: 500/m);
+	ok($body eq "<HTML><BODY><p><em>The Brass Band Portal</em> is visited some 500 times</BODY></HTML>");
 
 	#..........................................
 	diag('Ignore warning about <a> is never closed');
