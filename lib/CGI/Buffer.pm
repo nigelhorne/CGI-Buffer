@@ -604,13 +604,23 @@ sub _generate_key {
 		return $cache_key;
 	}
 	unless(defined($info)) {
-		$info = CGI::Info->new();
+		$info = CGI::Info->new({ cache => $cache });
 	}
 
 	# TODO: Use CGI::Lingua so that different languages are stored
 	#	in different caches
 	#	Mobile/web/robot pages should be stored in different caches
-	my $key = $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
+	my $key;
+	if($info->is_robot()) {
+		$key = 'robot';
+	} elsif($info->is_search()) {
+		$key = 'search';
+	} elsif($info->is_mobile()) {
+		$key = 'mobile';
+	} else {
+		$key = 'web';
+	}
+	$key .= '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
 	if($ENV{'HTTP_COOKIE'}) {
 		# Different states of the client are stored in different caches
 		$key .= '::' . $ENV{'HTTP_COOKIE'};
