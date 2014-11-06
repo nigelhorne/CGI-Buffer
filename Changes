@@ -4,6 +4,7 @@ Revision history for CGI-Buffer
 	Speed optimisation with some output
 	Added the info option to init
 	Removed some unused modules, and defer loading others
+	Removed Exporter and use vars, use our instead
 
 0.70	Fri 13 Dec 10:24:45 EST 2013
 	Loop optimisation until complete for even smaller output

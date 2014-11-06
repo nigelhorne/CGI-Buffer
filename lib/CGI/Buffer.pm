@@ -83,12 +83,11 @@ our $logger;
 our $status;
 our $script_mtime;
 our $cobject;
+our($buf, $pos, $headers, $header, $body, @content_type, $etag,
+	$send_body, @o);
 
 BEGIN {
-	use Exporter();
-	use vars qw($VERSION $buf $pos $headers $header
-				$body @content_type $etag
-				$send_body @o);
+	# use Exporter();
 
 	$CGI::Buffer::buf = IO::String->new();
 	$CGI::Buffer::old_buf = select($CGI::Buffer::buf);
