@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.73
+	It's is_search_engine, not is_search!
+
 0.72	Fri Nov  7 11:03:55 EST 2014
 	Added the info option to init
 	Removed some unused modules, and defer loading others

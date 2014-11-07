@@ -617,7 +617,7 @@ sub _generate_key {
 	my $key;
 	if($info->is_robot()) {
 		$key = 'robot';
-	} elsif($info->is_search()) {
+	} elsif($info->is_search_engine()) {
 		$key = 'search';
 	} elsif($info->is_mobile()) {
 		$key = 'mobile';
