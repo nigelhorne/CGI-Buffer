@@ -265,7 +265,7 @@ OUTPUT: {
 	print $tmp "CGI::Buffer::set_options(optimise_content => 1, lint_content=> 1);\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
 	print $tmp "print \"\\n\\n\";\n";
-	print $tmp "print \"<HTML><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click</A> \\n\\t<a href=\\\"http://www.example.com/bar.htm\\\">Or here</a> </BODY></HTML>\\n\";\n";
+	print $tmp "print \"<HTML><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click </A> \\n\\t<a href=\\\"http://www.example.com/bar.htm\\\">Or here</a> </BODY></HTML>\\n\";\n";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
 
