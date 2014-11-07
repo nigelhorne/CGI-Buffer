@@ -366,6 +366,10 @@ END {
 						Compress::Zlib->import;
 
 						# Avoid 'Wide character in memGzip'
+						unless($encode_loaded) {
+							require Encode;
+							$encode_loaded = 1;
+						}
 						my $nbody = Compress::Zlib::memGzip(\encode_utf8($body));
 						if(length($nbody) < length($body)) {
 							$body = $nbody;
