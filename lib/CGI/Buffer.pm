@@ -15,11 +15,11 @@ CGI::Buffer - Verify and Optimise CGI Output
 
 =head1 VERSION
 
-Version 0.71
+Version 0.72
 
 =cut
 
-our $VERSION = '0.71';
+our $VERSION = '0.72';
 
 =head1 SYNOPSIS
 
@@ -155,7 +155,11 @@ END {
 			# link to /foo.bar.htm - there's no need to include
 			# the site name in the link
 			unless(defined($info)) {
-				$info = CGI::Info->new();
+				if($cache) {
+					$info = CGI::Info->new({ cache => $cache });
+				} else {
+					$info = CGI::Info->new();
+				}
 			}
 
 			my $href = $info->host_name();
@@ -586,7 +590,7 @@ sub _optimise_content {
 	$body =~ s/(<script>\s+|\s+<script>)/<script>/gis;
 	$body =~ s/(<\/script>\s+|\s+<\/script>)/<\/script>/gis;
 	$body =~ s/\<td\>\s/\<td\>/gi;
-	$body =~ s/\s\<a\s+href="(.+?)"\>\s/ <a href="$1">/gis;
+	$body =~ s/\s*\<a\s+href="(.+?)"\>\s*/ <a href="$1">/gis;
 	$body =~ s/\s*<a\s+href=\s"(.+?)"\>/ <a href="$1">/gis;
 	$body =~ s/(\s*<hr>\s+|\s+<hr>\s*)/<hr>/gis;
 	# $body =~ s/\s<hr>/<hr>/gis;
@@ -848,7 +852,11 @@ sub _my_age {
 		return $script_mtime;
 	}
 	unless(defined($info)) {
-		$info = CGI::Info->new();
+		if($cache) {
+			$info = CGI::Info->new({ cache => $cache });
+		} else {
+			$info = CGI::Info->new();
+		}
 	}
 
 	my $path = $info->script_path();

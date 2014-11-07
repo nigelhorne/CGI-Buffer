@@ -1,7 +1,9 @@
 Changes
+LICENSE
 MANIFEST
 Makefile.PL
 README
+README.md
 ignore.txt
 lib/CGI/Buffer.pm
 META.yml                                 Module meta-data (added by MakeMaker)
