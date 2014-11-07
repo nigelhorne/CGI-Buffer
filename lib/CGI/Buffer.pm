@@ -15,11 +15,11 @@ CGI::Buffer - Verify and Optimise CGI Output
 
 =head1 VERSION
 
-Version 0.72
+Version 0.73
 
 =cut
 
-our $VERSION = '0.72';
+our $VERSION = '0.73';
 
 =head1 SYNOPSIS
 
@@ -617,7 +617,6 @@ sub _generate_key {
 
 	# TODO: Use CGI::Lingua so that different languages are stored
 	#	in different caches
-	#	Mobile/web/robot pages should be stored in different caches
 	my $key;
 	if($info->is_robot()) {
 		$key = 'robot';
