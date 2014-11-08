@@ -30,6 +30,7 @@ t/port.t
 t/prereq.t
 t/snippets.t
 t/spelling.t
+t/strict.t
 t/too_late.t
 t/vars.t
 META.json                                Module JSON meta-data (added by MakeMaker)

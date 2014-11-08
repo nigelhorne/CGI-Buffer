@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.74
+	Added t/strict.t
+
 0.73	Fri Nov  7 16:48:40 EST 2014
 	It's is_search_engine, not is_search!
 	Fix missing encoding_utf8

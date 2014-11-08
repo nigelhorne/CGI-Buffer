@@ -1,3 +1,4 @@
+use strict;
 use Test::Most;
 
 eval 'use Test::Portability::Files';
