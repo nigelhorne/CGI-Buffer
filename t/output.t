@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 
-use Test::Most tests => 100;
+use Test::Most tests => 101;
 use Test::TempDir;
 use Compress::Zlib;
 use DateTime;
@@ -507,7 +507,6 @@ OUTPUT: {
 	#..........................................
 	delete $ENV{'HTTP_IF_NONE_MATCH'};
 	$ENV{'HTTP_IF_MODIFIED_SINCE'} = DateTime->now();
-	$ENV{'REQUEST_METHOD'} = 'GET';
 
 	($tmp, $filename) = tempfile();
 	if($ENV{'PERL5LIB'}) {
@@ -575,4 +574,26 @@ OUTPUT: {
 	ok(length($body) != 0);
 	ok(defined($length));
 	ok(length($body) == $length);
+
+	#......................................
+	# Check no output does nothing strange
+	($tmp, $filename) = tempfile();
+	if($ENV{'PERL5LIB'}) {
+		foreach (split(':', $ENV{'PERL5LIB'})) {
+			print $tmp "use lib '$_';\n";
+		}
+	}
+	print $tmp "use strict;\n";
+	print $tmp "use CGI::Buffer;\n";
+
+	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+
+	$keep = $_;
+	undef $/;
+	$output = <$fout>;
+	$/ = $keep;
+
+	close $tmp;
+
+	ok($output eq '');
 }
