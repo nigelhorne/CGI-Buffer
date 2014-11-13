@@ -255,6 +255,9 @@ END {
 				push @o, "Status: 304 Not Modified";
 				$send_body = 0;
 				$status = 304;
+				if($logger) {
+					$logger->debug('Set status to 304');
+				}
 			}
 		}
 	}
@@ -358,6 +361,9 @@ END {
 						push @o, "Status: 304 Not Modified";
 						$status = 304;
 						$send_body = 0;
+						if($logger) {
+							$logger->debug('Set status to 304');
+						}
 					}
 				}
 				if($send_body && (length($encoding) > 0)) {
@@ -390,6 +396,9 @@ END {
 					push @o, "Status: 304 Not Modified";
 					$send_body = 0;
 					$status = 304;
+					if($logger) {
+						$logger->debug('Set status to 304');
+					}
 				} else {
 					$cannot_304 = 1;
 				}
@@ -550,6 +559,9 @@ sub _check_modified_since {
 		push @o, "Status: 304 Not Modified";
 		$status = 304;
 		$send_body = 0;
+		if($logger) {
+			$logger->debug('Set status to 304');
+		}
 	}
 }
 
