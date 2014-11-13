@@ -280,7 +280,7 @@ OUTPUT: {
 	# should be optimised, therefore www.example.com shouldn't appear
 	# anywhere at all
 	ok($output !~ /www\.example\.com/m);
-	ok($output =~ /<a href="\/foo\.htm">Click<\/A> <a href="\/bar\.htm">Or here<\/a>/m);
+	ok($output =~ /<a href="\/foo\.htm">Click<\/A> <a href="\/bar\.htm">Or here<\/a>/mi);
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 
