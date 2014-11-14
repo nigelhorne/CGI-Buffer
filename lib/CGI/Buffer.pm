@@ -455,6 +455,9 @@ END {
 					$cache_hash->{'etag'} = $etag
 				}
 				$cache->set($key, Storable::freeze($cache_hash), $cache_age);
+				if($logger) {
+					$logger->debug("store $key in the cache");
+				}
 				if($generate_last_modified) {
 					$cobject = $cache->get_object($key);
 					if(defined($cobject)) {
