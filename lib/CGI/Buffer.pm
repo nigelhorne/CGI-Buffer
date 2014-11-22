@@ -127,7 +127,7 @@ END {
 		}
 	}
 
-	if(defined($body) && (length($body) == 0)) {
+	if(defined($body) && ($body eq '')) {
 		# E.g. if header of Location is given with no body, for
 		#	redirection
 		$body = undef;
@@ -606,12 +606,12 @@ sub _optimise_content {
 	$body =~ s/ +/ /gs;	# Remove duplicate space, don't use \s+ it breaks JavaScript
 	$body =~ s/\s\<p\>/\<p\>/gi;
 	$body =~ s/\s\<script/\<script/gi;
-	$body =~ s/(<script>\s+|\s+<script>)/<script>/gis;
-	$body =~ s/(<\/script>\s+|\s+<\/script>)/<\/script>/gis;
+	$body =~ s/(<script>\s|\s<script>)/<script>/gis;
+	$body =~ s/(<\/script>\s|\s<\/script>)/<\/script>/gis;
 	$body =~ s/\<td\>\s/\<td\>/gi;
-	$body =~ s/\s*\<a\s+href="(.+?)"\>\s*/ <a href="$1">/gis;
-	$body =~ s/\s*<a\s+href=\s"(.+?)"\>/ <a href="$1">/gis;
-	$body =~ s/(\s*<hr>\s+|\s+<hr>\s*)/<hr>/gis;
+	$body =~ s/\s?\<a\shref="(.+?)"\>\s?/ <a href="$1">/gis;
+	$body =~ s/\s?<a\shref=\s"(.+?)"\>/ <a href="$1">/gis;
+	$body =~ s/(\s?<hr>\s|\s<hr>\s?)/<hr>/gis;
 	# $body =~ s/\s<hr>/<hr>/gis;
 	# $body =~ s/<hr>\s/<hr>/gis;
 	$body =~ s/<\/li>\s<li>/<\/li><li>/gis;
