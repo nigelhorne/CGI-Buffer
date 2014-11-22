@@ -632,17 +632,7 @@ sub _generate_key {
 
 	# TODO: Use CGI::Lingua so that different languages are stored
 	#	in different caches
-	my $key;
-	if($info->is_robot()) {
-		$key = 'robot';
-	} elsif($info->is_search_engine()) {
-		$key = 'search';
-	} elsif($info->is_mobile()) {
-		$key = 'mobile';
-	} else {
-		$key = 'web';
-	}
-	$key .= '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
+	my $key = $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
 	if($ENV{'HTTP_COOKIE'}) {
 		# Different states of the client are stored in different caches
 		$key .= '::' . $ENV{'HTTP_COOKIE'};
