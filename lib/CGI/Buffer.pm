@@ -847,6 +847,9 @@ sub is_cached {
 			$logger->debug('Script has been updated');
 		}
 		$cobject = undef;
+		# Nothing will be in date and all new searches would miss
+		# anyway, so may as well clear it all
+		$cache->clear();
 		return 0;
 	}
 	if($logger) {
