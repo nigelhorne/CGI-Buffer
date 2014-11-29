@@ -806,6 +806,9 @@ the result stored in the cache.
 
 sub is_cached {
 	unless($cache) {
+		if($logger) {
+			$logger->debug("is_cached: cache hasn't been enabled");
+		}
 		return 0;
 	}
 
