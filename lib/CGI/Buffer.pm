@@ -823,7 +823,7 @@ sub is_cached {
 	$cobject = $cache->get_object($key);
 	unless($cobject) {
 		if($logger) {
-			$logger->debug('is_cached: not found in cache');
+			$logger->debug('not found in cache');
 		}
 		return 0;
 	}
