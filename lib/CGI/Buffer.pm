@@ -250,8 +250,11 @@ END {
 		$encode_loaded = 1;
 		$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 		push @o, "ETag: $etag";
-		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304) {
-			if(($etag =~ /\Q$ENV{'HTTP_IF_NONE_MATCH'}\E/) && ($status == 200)) {
+		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304 && ($status == 200)) {
+			if($logger) {
+				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
+			}
+			if($etag =~ /\Q$ENV{'HTTP_IF_NONE_MATCH'}\E/) {
 				push @o, "Status: 304 Not Modified";
 				$send_body = 0;
 				$status = 304;
