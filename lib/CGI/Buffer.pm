@@ -723,8 +723,12 @@ sub init {
 	# Unsafe options - must be called before output has been started
 	my $pos = $CGI::Buffer::buf->getpos;
 	if($pos > 0) {
-		# Must do Carp::carp instead of carp for Test::Carp
-		Carp::carp "Too late to call init, $pos characters have been printed";
+		if(defined($logger)) {
+			$logger->warn("Too late to call init, $pos characters have been printed"};
+		} else {
+			# Must do Carp::carp instead of carp for Test::Carp
+			Carp::carp "Too late to call init, $pos characters have been printed";
+		}
 	}
 	unless(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
 		if(defined($params{cache})) {
