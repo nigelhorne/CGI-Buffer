@@ -724,7 +724,7 @@ sub init {
 	my $pos = $CGI::Buffer::buf->getpos;
 	if($pos > 0) {
 		if(defined($logger)) {
-			$logger->warn("Too late to call init, $pos characters have been printed"};
+			$logger->warn("Too late to call init, $pos characters have been printed");
 		} else {
 			# Must do Carp::carp instead of carp for Test::Carp
 			Carp::carp "Too late to call init, $pos characters have been printed";
