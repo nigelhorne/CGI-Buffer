@@ -18,9 +18,10 @@ if($@) {
 		delete $ENV{'REMOTE_ADDR'};
 		delete $ENV{'HTTP_USER_AGENT'};
 
+		ok(CGI::Buffer::can_cache() == 1);
 		ok(CGI::Buffer::is_cached() == 0);
 
-		my $test_count = 4;
+		my $test_count = 5;
 
 		SKIP: {
 			eval {
@@ -30,7 +31,7 @@ if($@) {
 			};
 
 			if($@) {
-				$test_count = 3;
+				$test_count = 4;
 				skip 'CHI not installed', 1 if $@;
 			}
 

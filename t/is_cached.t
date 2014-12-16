@@ -4,7 +4,7 @@
 
 use strict;
 use warnings;
-use Test::Most tests => 4;
+use Test::Most tests => 5;
 use Storable;
 # use Test::NoWarnings;	# HTML::Clean has them
 
@@ -17,6 +17,7 @@ CACHED: {
 	delete $ENV{'HTTP_USER_AGENT'};
 
 	ok(CGI::Buffer::is_cached() == 0);
+	ok(CGI::Buffer::can_cache() == 1);
 
 	SKIP: {
 		eval {

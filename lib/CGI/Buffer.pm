@@ -730,32 +730,22 @@ sub init {
 			Carp::carp "Too late to call init, $pos characters have been printed";
 		}
 	}
-	if(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
-		if(defined($logger)) {
-			$logger->debug('cache will not be enabled');
-		}
-	} elsif(defined($params{cache})) {
+	if(defined($params{cache}) && can_cache()) {
 		if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
 			my $control = $ENV{'HTTP_CACHE_CONTROL'};
 			if(defined($logger)) {
 				$logger->debug("cache_control = $control");
 			}
-			unless(($control eq 'no-store') ||
-			       ($control eq 'no-cache') ||
-			       ($control eq 'private')) {
-				if($control =~ /^max-age\s*=\s*(\d+)$/) {
-					# There is an argument not to do this
-					# since one client will affect others
-					$cache_age = "$1 seconds";
-					if(defined($logger)) {
-						$logger->debug("cache_age = $cache_age");
-					}
+			if($control =~ /^max-age\s*=\s*(\d+)$/) {
+				# There is an argument not to do this
+				# since one client will affect others
+				$cache_age = "$1 seconds";
+				if(defined($logger)) {
+					$logger->debug("cache_age = $cache_age");
 				}
-				$cache = $params{cache};
 			}
-		} else {
-			$cache = $params{cache};
 		}
+		$cache = $params{cache};
 		if(defined($params{cache_key})) {
 			$cache_key = $params{cache_key};
 		}
@@ -783,6 +773,30 @@ sub set_options {
 	init(%params);
 }
 
+=head2 can_cache
+
+Returns true if the server is allowed to store the results locally.
+
+=cut
+
+sub can_cache {
+	if(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
+		return 0;
+	}
+	if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
+		my $control = $ENV{'HTTP_CACHE_CONTROL'};
+		if(defined($logger)) {
+			$logger->debug("cache_control = $control");
+		}
+		if(($control eq 'no-store') ||
+		       ($control eq 'no-cache') ||
+		       ($control eq 'private')) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 =head2 is_cached
 
 Returns true if the output is cached. If it is then it means that all of the
@@ -804,13 +818,15 @@ the result stored in the cache.
     # To use server side caching you must give the cache argument, however
     # the cache_key argument is optional - if you don't give one then one will
     # be generated for you
-    CGI::Buffer::init(
-	cache => CHI->new(driver => 'File'),
-	cache_key => $i->domain_name() . '/' . $i->script_name() . '/' . $i->as_string() . '/' . $l->language()
-    );
-    if(CGI::Buffer::is_cached()) {
-	# Output will be retrieved from the cache and sent automatically
-	exit;
+    if(CGI::Buffer::can_cache()) {
+        CGI::Buffer::init(
+	    cache => CHI->new(driver => 'File'),
+	    cache_key => $i->domain_name() . '/' . $i->script_name() . '/' . $i->as_string() . '/' . $l->language()
+        );
+        if(CGI::Buffer::is_cached()) {
+	    # Output will be retrieved from the cache and sent automatically
+	    exit;
+        }
     }
     # Not in the cache, so now do our expensive computing to generate the
     # results

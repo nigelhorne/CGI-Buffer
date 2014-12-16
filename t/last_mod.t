@@ -21,9 +21,10 @@ TEST: {
 		delete $ENV{'NO_CACHE'};
 		delete $ENV{'NO_STORE'};
 
+		ok(CGI::Buffer::can_cache() == 1);
 		ok(CGI::Buffer::is_cached() == 0);
 
-		my $test_count = 12;
+		my $test_count = 13;
 
 		SKIP: {
 			eval {
@@ -33,7 +34,7 @@ TEST: {
 			};
 
 			if($@) {
-				$test_count = 3;
+				$test_count = 4;
 				skip 'CHI required to test', 1 if $@;
 			}
 
