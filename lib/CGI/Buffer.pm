@@ -730,23 +730,31 @@ sub init {
 			Carp::carp "Too late to call init, $pos characters have been printed";
 		}
 	}
-	unless(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
-		if(defined($params{cache})) {
-			if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
-				my $control = $ENV{'HTTP_CACHE_CONTROL'};
-				unless(($control eq 'no-store') ||
-				       ($control eq 'no-cache') ||
-				       ($control eq 'private')) {
-					if($control =~ /^max-age\s*=\s*(\d+)$/) {
-						# There is an argument not to do this
-						# since one client will affect others
-						$cache_age = "$1 seconds";
+	if(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
+		if(defined($logger)) {
+			$logger->debug('cache will not be enabled');
+		}
+	} elsif(defined($params{cache})) {
+		if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
+			my $control = $ENV{'HTTP_CACHE_CONTROL'};
+			if(defined($logger)) {
+				$logger->debug("cache_control = $control");
+			}
+			unless(($control eq 'no-store') ||
+			       ($control eq 'no-cache') ||
+			       ($control eq 'private')) {
+				if($control =~ /^max-age\s*=\s*(\d+)$/) {
+					# There is an argument not to do this
+					# since one client will affect others
+					$cache_age = "$1 seconds";
+					if(defined($logger)) {
+						$logger->debug("cache_age = $cache_age");
 					}
-					$cache = $params{cache};
 				}
-			} else {
 				$cache = $params{cache};
 			}
+		} else {
+			$cache = $params{cache};
 		}
 		if(defined($params{cache_key})) {
 			$cache_key = $params{cache_key};

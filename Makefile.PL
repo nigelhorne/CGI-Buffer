@@ -12,6 +12,13 @@ WriteMakefile(
       ? ('LICENSE'=> 'GPL')
       : ()),
     PL_FILES            => {},
+    BUILD_REQUIRES => {
+	'Test::Most' => 0,
+	# 'Test::NoWarnings' => 0,
+	'Test::TempDir' => 0,
+	'DateTime' => 0,
+	'Compress::Zlib' => 0,
+    },
     PREREQ_PM => {
 	'Carp' => 0,
 	'CGI::Info' => 0.42,	# Minimum version for Cygwin
@@ -21,13 +28,9 @@ WriteMakefile(
     	'Encode' => 0,
 	# 'HTML::Clean' => 0.8,
 	'HTML::Packer' => 1.000,
-	'IO::CaptureOutput' => 0,
 	'IO::String' => 0,
 	'JavaScript::Packer' => 1.006003,
 	# 'Test::Kwalitee' => 0,
-        'Test::Most' => 0,
-	'Test::TempDir' => 0,
-	'DateTime' => 0,
 	'HTTP::Date' => 0,
 	'File::Spec' => 0,
 	'Time::localtime' => 0,
