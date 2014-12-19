@@ -18,6 +18,7 @@ WriteMakefile(
 	'Test::TempDir' => 0,
 	'DateTime' => 0,
 	'Compress::Zlib' => 0,
+	# 'Test::Kwalitee' => 0,
     },
     PREREQ_PM => {
 	'Carp' => 0,
@@ -30,7 +31,6 @@ WriteMakefile(
 	'HTML::Packer' => 1.000,
 	'IO::String' => 0,
 	'JavaScript::Packer' => 1.006003,
-	# 'Test::Kwalitee' => 0,
 	'HTTP::Date' => 0,
 	'File::Spec' => 0,
 	'Time::localtime' => 0,
