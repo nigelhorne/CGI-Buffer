@@ -15,11 +15,11 @@ CGI::Buffer - Verify and Optimise CGI Output
 
 =head1 VERSION
 
-Version 0.73
+Version 0.74
 
 =cut
 
-our $VERSION = '0.73';
+our $VERSION = '0.74';
 
 =head1 SYNOPSIS
 
@@ -1030,7 +1030,7 @@ The licence for cgi_buffer is:
 
     This software is provided 'as is' without warranty of any kind."
 
-The rest of the program is Copyright 2011-2014 Nigel Horne,
+The rest of the program is Copyright 2011-2015 Nigel Horne,
 and is released under the following licence: GPL
 
 =cut

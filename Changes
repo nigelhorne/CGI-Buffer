@@ -1,7 +1,7 @@
 Revision history for CGI-Buffer
 
-0.74
-	Added t/strict.t and t/used.t
+0.74	Sat Jan 24 10:47:50 EST 2015
+	Added t/strict.t, t_unused.t and t/used.t
 	When a script has been updated clear all the cache
 	Added can_cache()
 
