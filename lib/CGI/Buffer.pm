@@ -976,6 +976,8 @@ L<Log::Log4Perl>, if you're using that, so that any messages it
 produces are printed after the HTTP headers have been sent by
 CGI::Buffer;
 
+CGI::Buffer is not compatible with FCGI.
+
 Please report any bugs or feature requests to C<bug-cgi-buffer at rt.cpan.org>,
 or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CGI-Buffer>.
 I will be notified, and then you'll automatically be notified of progress on
