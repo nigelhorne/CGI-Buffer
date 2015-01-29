@@ -322,7 +322,7 @@ OUTPUT: {
 	ok($body =~ /<hr>A Line<hr>Foo/);
 
 	#..........................................
-	# Space left in tact after </em>
+	# Space left intact after </em>
 	($tmp, $filename) = tempfile();
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
