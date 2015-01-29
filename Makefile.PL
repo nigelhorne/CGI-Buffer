@@ -17,12 +17,11 @@ WriteMakefile(
 	# 'Test::NoWarnings' => 0,
 	'Test::TempDir' => 0,
 	'DateTime' => 0,
-	'Compress::Zlib' => 0,
 	# 'Test::Kwalitee' => 0,
     },
     PREREQ_PM => {
 	'Carp' => 0,
-	'CGI::Info' => 0.42,	# Minimum version for Cygwin
+	'CGI::Info' => 0.51,
 	'CSS::Packer' => 0,
 	'Compress::Zlib' => 0,
 	'Digest::MD5' => 0,
