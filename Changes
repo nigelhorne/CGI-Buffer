@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.75
+	Fix set_options when given a ref
+
 0.74	Sat Jan 24 10:47:50 EST 2015
 	Added t/strict.t, t_unused.t and t/used.t
 	When a script has been updated clear all the cache

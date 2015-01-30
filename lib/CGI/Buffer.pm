@@ -768,9 +768,9 @@ Synonym for init, kept for historical reasons.
 =cut
 
 sub set_options {
-	my %params = @_;
+	my %params = (ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
 
-	init(%params);
+	init(\%params);
 }
 
 =head2 can_cache
@@ -976,7 +976,7 @@ L<Log::Log4Perl>, if you're using that, so that any messages it
 produces are printed after the HTTP headers have been sent by
 CGI::Buffer;
 
-CGI::Buffer is not compatible with FCGI.
+CGI::Buffer is not compatible with FCGI, use L<FCGI::Buffer> instead.
 
 Please report any bugs or feature requests to C<bug-cgi-buffer at rt.cpan.org>,
 or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CGI-Buffer>.

@@ -163,7 +163,7 @@ OUTPUT: {
 		}
 	}
 	print $tmp "use CGI::Buffer;\n";
-	print $tmp "CGI::Buffer::init({ optimise_content => 1 });\n";
+	print $tmp "CGI::Buffer::set_options({ optimise_content => 1 });\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><A HREF=\\\"http://www.example.com\\\">Click</A>\n<script>\nalert(foo);\n</script></BODY></HTML>\\n\";\n";
@@ -394,7 +394,7 @@ OUTPUT: {
 		}
 	}
 	print $tmp "use CGI::Buffer;\n";
-	print $tmp "CGI::Buffer::set_options(optimise_content => 1);\n";
+	print $tmp "CGI::Buffer::set_options({optimise_content => 1});\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
