@@ -919,7 +919,7 @@ sub _should_gzip {
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
 		foreach my $encoding ('x-gzip', 'gzip') {
 			$_ = $accept;
-			if($content_type[0]) {
+			if(defined(@content_type) && $content_type[0]) {
 				if (m/$encoding/i && (lc($content_type[0]) eq 'text')) {
 					return $encoding;
 				}
