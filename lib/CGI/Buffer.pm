@@ -83,7 +83,7 @@ our $logger;
 our $status;
 our $script_mtime;
 our $cobject;
-our($buf, $pos, $headers, $header, $body, @content_type, $etag,
+our($buf, $headers, $header, $body, @content_type, $etag,
 	$send_body, @o);
 
 BEGIN {
@@ -102,7 +102,7 @@ END {
 		$logger = undef;
 	}
 	select($CGI::Buffer::old_buf);
-	$pos = $CGI::Buffer::buf->getpos;
+	my $pos = $CGI::Buffer::buf->getpos;
 	$CGI::Buffer::buf->setpos(0);
 	read($CGI::Buffer::buf, $buf, $pos);
 	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
