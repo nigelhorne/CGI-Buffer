@@ -342,9 +342,13 @@ END {
 					foreach my $k (keys %{$cache_hash}) {
 						$body .= "\t$k\n";
 					}
-					warn($body);
 					$cache->remove($key);
-					carp "Can't retrieve body for key $key";
+					if($logger) {
+						$logger->error("Can't retrieve body for key $key");
+					} else {
+						carp "Can't retrieve body for key $key";
+					}
+					warn($body);
 					$send_body = 0;
 					$status = 500;
 				}
