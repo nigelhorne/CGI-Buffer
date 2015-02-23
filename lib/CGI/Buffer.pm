@@ -435,7 +435,7 @@ END {
 					my $body_length = length($body);
 					push @o, "Content-Length: $body_length";
 				}
-				if(scalar(@o)) {
+				if(defined(@o) && scalar(@o)) {
 					# Remember, we're storing the UNzipped
 					# version in the cache
 					my $c;
