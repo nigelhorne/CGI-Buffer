@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 use Test::Most;
-use Test::TempDir;
+use Test::TempDir::Tiny;
 use DateTime;
 # use Test::NoWarnings;	# HTML::Clean has them
 
@@ -14,7 +14,6 @@ BEGIN {
 }
 
 TEST: {
-
 	LAST_MODIFIED: {
 		delete $ENV{'REMOTE_ADDR'};
 		delete $ENV{'HTTP_USER_AGENT'};
@@ -38,7 +37,8 @@ TEST: {
 				skip 'CHI required to test', 1 if $@;
 			}
 
-			my ($tmp, $filename) = tempfile();
+			my $filename = tempdir() . 'last_mod.t';
+			open(my $tmp, '>', $filename);
 			print $tmp "use strict;\n";
 			print $tmp "use CGI::Buffer;\n";
 			print $tmp "use CHI;\n";

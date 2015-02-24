@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 use Test::Most tests => 101;
-use Test::TempDir;
+use Test::TempDir::Tiny;
 use Compress::Zlib;
 use DateTime;
 # use Test::NoWarnings;	# HTML::Clean has them
@@ -26,7 +26,8 @@ OUTPUT: {
 	delete $ENV{'HTTP_TE'};
 	delete $ENV{'SERVER_PROTOCOL'};
 
-	my($tmp, $filename) = tempfile();
+	my $filename = tempdir() . 'test1';
+	open(my $tmp, '>', $filename);
 	print $tmp "use strict;\n";
 	print $tmp "use CGI::Buffer;\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
@@ -54,7 +55,8 @@ OUTPUT: {
 	ok($body eq "<HTML><BODY>   Hello, world</BODY></HTML>\n");
 	ok(length($body) eq $length);
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test2';
+	open($tmp, '>', $filename);
 	print $tmp "use CGI::Buffer;\n";
 	print $tmp "CGI::Buffer::set_options(optimise_content => 1);\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
@@ -85,7 +87,8 @@ OUTPUT: {
 
 	$ENV{'HTTP_ACCEPT_ENCODING'} = 'gzip';
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test3';
+	open($tmp, '>', $filename);
 	print $tmp "use CGI::Buffer;\n";
 	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
 	print $tmp "print \"\\n\\n\";\n";
@@ -116,7 +119,8 @@ OUTPUT: {
 	delete($ENV{'HTTP_ACCEPT_ENCODING'});
 	$ENV{'HTTP_TE'} = 'gzip';
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test4';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -156,7 +160,8 @@ OUTPUT: {
 
 	$ENV{'SERVER_NAME'} = 'www.example.com';
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test5';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -188,7 +193,8 @@ OUTPUT: {
 	ok(length($body) eq $length);
 
 	#..........................................
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test6';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -219,7 +225,8 @@ OUTPUT: {
 	ok(length($body) eq $length);
 
 	#..........................................
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test7';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -255,7 +262,8 @@ OUTPUT: {
 
 	#..........................................
 	# Check for removal of consecutive white space between links
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test8';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -292,7 +300,8 @@ OUTPUT: {
 
 	#..........................................
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test9';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -323,7 +332,8 @@ OUTPUT: {
 
 	#..........................................
 	# Space left intact after </em>
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test10';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -354,7 +364,8 @@ OUTPUT: {
 	#..........................................
 	diag('Ignore warning about <a> is never closed');
 	delete $ENV{'SERVER_NAME'};
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test11';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -387,7 +398,8 @@ OUTPUT: {
 	$ENV{'SERVER_PROTOCOL'} = 'HTTP/1.1';
 	delete $ENV{'HTTP_ACCEPT_ENCODING'};
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test12';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -453,7 +465,8 @@ OUTPUT: {
 	delete $ENV{'HTTP_ACCEPT_ENCODING'};
 	$ENV{'REQUEST_METHOD'} = 'GET';
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test13';
+	open($tmp, '>', $filename);
 	print $tmp "use CGI::Buffer;\n";
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
@@ -508,7 +521,8 @@ OUTPUT: {
 	delete $ENV{'HTTP_IF_NONE_MATCH'};
 	$ENV{'HTTP_IF_MODIFIED_SINCE'} = DateTime->now();
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test14';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -543,7 +557,8 @@ OUTPUT: {
 	#......................................
 	$ENV{'HTTP_IF_MODIFIED_SINCE'} = 'This is an invalid date';
 
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test15';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
@@ -577,7 +592,8 @@ OUTPUT: {
 
 	#......................................
 	# Check no output does nothing strange
-	($tmp, $filename) = tempfile();
+	$filename = tempdir() . 'test16';
+	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";

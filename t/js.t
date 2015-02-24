@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Test::Most tests => 9;
-use Test::TempDir;
+use Test::TempDir::Tiny;
 # use Test::NoWarnings;	# HTML::Clean has them
 
 BEGIN {
@@ -53,7 +53,8 @@ OUTPUT: {
 	print "</body>\n";
 EOF
 
-	my ($tmp, $filename) = tempfile();
+	my $filename = tempdir() . 'js.t';
+	open(my $tmp, '>', $filename);
 	print $tmp $input;
 
 	open(my $fout, '-|', "$^X -Iblib/lib " . $filename);
