@@ -592,6 +592,9 @@ OUTPUT: {
 
 	#......................................
 	# Check no output does nothing strange
+
+	delete $ENV{'HTTP_IF_MODIFIED_SINCE'};
+
 	$filename = tempdir() . 'test16';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
