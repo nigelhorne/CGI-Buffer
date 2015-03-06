@@ -413,7 +413,7 @@ END {
 				push @o, "ETag: $etag";
 			}
 			if($cobject) {
-				if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && (!$cannot_304)) {
+				if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && !$cannot_304) {
 					_check_modified_since({
 						since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
 						modified => $cobject->created_at()
@@ -431,10 +431,6 @@ END {
 					$cache_age = '10 minutes';
 				}
 				$cache_hash->{'body'} = $unzipped_body;
-				if($body && $send_body) {
-					my $body_length = length($body);
-					push @o, "Content-Length: $body_length";
-				}
 				if(defined(@o) && scalar(@o)) {
 					# Remember, we're storing the UNzipped
 					# version in the cache
@@ -481,7 +477,15 @@ END {
 		$cache = undef;
 	}
 
-	my $body_length = defined($body) ? length($body) : 0;
+	my $body_length;
+	if(defined($body)) {
+		if(utf8::is_utf8($body)) {
+			utf8::encode($body);
+		} 
+		$body_length = length($body);
+	} else {
+		$body_length = 0;
+	}
 
 	if(defined($headers) && length($headers)) {
 		# Put the original headers first, then those generated within
