@@ -83,7 +83,7 @@ our $logger;
 our $status;
 our $script_mtime;
 our $cobject;
-our($buf, $headers, $header, $body, @content_type, $etag,
+our($x_cache, $buf, $headers, $header, $body, @content_type, $etag,
 	$send_body, @o);
 
 BEGIN {
@@ -315,6 +315,14 @@ END {
 					$cache_hash = Storable::thaw($cobject->value());
 					$headers = $cache_hash->{'headers'};
 					@o = ("X-CGI-Buffer-$VERSION: Hit");
+					if($info) {
+						my $host_name = $info->host_name();
+						push @o, "X-Cache: HIT from $host_name";
+						push @o, "X-Cache-Lookup: HIT from $host_name";
+					} else {
+						push @o, 'X-Cache: HIT';
+						push @o, 'X-Cache-Lookup: HIT';
+					}
 				} else {
 					carp "Error retrieving data for key $key";
 				}
@@ -431,7 +439,7 @@ END {
 					$cache_age = '10 minutes';
 				}
 				$cache_hash->{'body'} = $unzipped_body;
-				if(defined(@o) && scalar(@o)) {
+				if(@o && scalar(@o)) {
 					# Remember, we're storing the UNzipped
 					# version in the cache
 					my $c;
@@ -470,11 +478,34 @@ END {
 					}
 				}
 			}
+			if($info) {
+				my $host_name = $info->host_name();
+				if(defined($x_cache)) {
+					push @o, "X-Cache: $x_cache from $host_name";
+				} else {
+					push @o, "X-Cache: MISS from $host_name";
+				}
+				push @o, "X-Cache-Lookup: MISS from $host_name";
+			} else {
+				if(defined($x_cache)) {
+					push @o, "X-Cache: $x_cache";
+				} else {
+					push @o, 'X-Cache: MISS';
+				}
+				push @o, 'X-Cache-Lookup: MISS';
+			}
 			push @o, "X-CGI-Buffer-$VERSION: Miss";
 		}
 		# We don't need it any more, so give Perl a chance to
 		# tidy it up seeing as we're in the destructor
 		$cache = undef;
+	} elsif($info) {
+		my $host_name = $info->host_name();
+		push @o, "X-Cache: MISS from $host_name";
+		push @o, "X-Cache-Lookup: MISS from $host_name";
+	} else {
+		push @o, 'X-Cache: MISS';
+		push @o, 'X-Cache-Lookup: MISS';
 	}
 
 	my $body_length;
@@ -796,7 +827,12 @@ Returns true if the server is allowed to store the results locally.
 =cut
 
 sub can_cache {
+	if(defined($x_cache)) {
+		return ($x_cache eq 'HIT');
+	}
+
 	if(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
+		$x_cache = 'MISS';
 		return 0;
 	}
 	if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
@@ -807,9 +843,11 @@ sub can_cache {
 		if(($control eq 'no-store') ||
 		       ($control eq 'no-cache') ||
 		       ($control eq 'private')) {
+			$x_cache = 'MISS';
 			return 0;
 		}
 	}
+	$x_cache = 'HIT';
 	return 1;
 }
 
@@ -935,7 +973,7 @@ sub _should_gzip {
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
 		foreach my $encoding ('x-gzip', 'gzip') {
 			$_ = $accept;
-			if(defined(@content_type) && $content_type[0]) {
+			if(@content_type && $content_type[0]) {
 				if (m/$encoding/i && (lc($content_type[0]) eq 'text')) {
 					return $encoding;
 				}

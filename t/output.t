@@ -182,7 +182,6 @@ OUTPUT: {
 
 	close $tmp;
 
-	ok($output !~ /www.example.com/m);
 	ok($output =~ /href="\/"/m);
 	ok($output !~ /<script>\s/m);
 	ok($output =~ /^Content-Length:\s+(\d+)/m);
@@ -191,6 +190,7 @@ OUTPUT: {
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 	ok(length($body) eq $length);
+	ok($body !~ /www.example.com/m);
 
 	#..........................................
 	$filename = tempdir() . 'test6';
@@ -215,7 +215,6 @@ OUTPUT: {
 
 	close $tmp;
 
-	ok($output !~ /www.example.com/m);
 	ok($output =~ /href="\/foo.htm"/m);
 	ok($output =~ /^Content-Length:\s+(\d+)/m);
 	$length = $1;
@@ -223,6 +222,7 @@ OUTPUT: {
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 	ok(length($body) eq $length);
+	ok($body !~ /www.example.com/m);
 
 	#..........................................
 	$filename = tempdir() . 'test7';
@@ -247,11 +247,6 @@ OUTPUT: {
 
 	close $tmp;
 
-	# Server is www.example.com (set in a previous test), so the href
-	# should be optimised, therefore www.example.com shouldn't appear
-	# anywhere at all
-	ok($output !~ /www\.example\.com/m);
-
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 
 	ok($headers =~ /^Content-Length:\s+(\d+)/m);
@@ -259,6 +254,10 @@ OUTPUT: {
 	ok(defined($length));
 	ok(length($body) eq $length);
 	ok($body =~ /href="\/foo.htm"/mi);
+	# Server is www.example.com (set in a previous test), so the href
+	# should be optimised, therefore www.example.com shouldn't appear
+	# anywhere at all
+	ok($body !~ /www\.example\.com/m);
 
 	#..........................................
 	# Check for removal of consecutive white space between links
@@ -284,10 +283,6 @@ OUTPUT: {
 
 	close $tmp;
 
-	# Server is www.example.com (set in a previous test), so the href
-	# should be optimised, therefore www.example.com shouldn't appear
-	# anywhere at all
-	ok($output !~ /www\.example\.com/m);
 	ok($output =~ /<a href="\/foo\.htm">Click<\/A> <a href="\/bar\.htm">Or here<\/a>/mi);
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
@@ -297,6 +292,10 @@ OUTPUT: {
 	ok(defined($length));
 	ok(length($body) eq $length);
 	ok($body =~ /href="\/foo.htm"/mi);
+	# Server is www.example.com (set in a previous test), so the href
+	# should be optimised, therefore www.example.com shouldn't appear
+	# anywhere at all
+	ok($body !~ /www\.example\.com/m);
 
 	#..........................................
 
