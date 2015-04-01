@@ -643,7 +643,7 @@ sub _optimise_content {
 	$body =~ s/\n\s+|\s+\n/\n/g;
 	$body =~ s/\t+/ /g;
 	$body =~ s/\s(\<.+?\>\s\<.+?\>)/$1/;
-	$body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/g;
+	# $body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/g;
 	$body =~ s/\<p\>\s/\<p\>/gi;
 	$body =~ s/\<\/p\>\s\<p\>/\<\/p\>\<p\>/gi;
 	$body =~ s/\<\/tr\>\s\<tr\>/\<\/tr\>\<tr\>/gi;

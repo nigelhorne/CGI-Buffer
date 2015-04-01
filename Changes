@@ -2,6 +2,7 @@ Revision history for CGI-Buffer
 
 0.76
 	Added X-Cache and X-Cache-Lookup headers
+	Fixed overly agressive optimisation
 
 0.75
 	Fix set_options when given a ref
