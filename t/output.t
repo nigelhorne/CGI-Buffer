@@ -431,7 +431,7 @@ OUTPUT: {
 	ok(length($body) > 0);
 
 	#..........................................
-	$ENV{'HTTP_IF_NONE_MATCH'} = $etag;
+	$ENV{'HTTP_IF_NONE_MATCH'} = "\"$etag\"";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
 
@@ -440,8 +440,8 @@ OUTPUT: {
 	$output = <$fout>;
 	$/ = $keep;
 
-	ok($output =~ /^Status: 304 Not Modified/mi);
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+	ok($headers =~ /^Status: 304 Not Modified/mi);
 	ok(length($body) == 0);
 
 	$ENV{'REQUEST_METHOD'} = 'HEAD';
@@ -455,8 +455,8 @@ OUTPUT: {
 
 	close $tmp;
 
-	ok($output =~ /^Status: 304 Not Modified/mi);
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+	ok($headers =~ /^Status: 304 Not Modified/mi);
 	ok(length($body) == 0);
 
 	#..........................................

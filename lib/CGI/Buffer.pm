@@ -254,7 +254,7 @@ END {
 			if($logger) {
 				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
 			}
-			if($etag =~ /\Q$ENV{'HTTP_IF_NONE_MATCH'}\E/) {
+			if($ENV{'HTTP_IF_NONE_MATCH'} =~ /\Q$etag\E/) {
 				push @o, "Status: 304 Not Modified";
 				$send_body = 0;
 				$status = 304;
