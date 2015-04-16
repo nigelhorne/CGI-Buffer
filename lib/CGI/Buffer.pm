@@ -512,7 +512,7 @@ END {
 	if(defined($body)) {
 		if(utf8::is_utf8($body)) {
 			utf8::encode($body);
-		} 
+		}
 		$body_length = length($body);
 	} else {
 		$body_length = 0;
@@ -842,6 +842,7 @@ sub can_cache {
 		}
 		if(($control eq 'no-store') ||
 		       ($control eq 'no-cache') ||
+		       ($control eq 'max-age=0') ||
 		       ($control eq 'private')) {
 			$x_cache = 'MISS';
 			return 0;
