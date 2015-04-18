@@ -372,6 +372,9 @@ END {
 						}
 						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 					}
+					if($logger && $generate_304) {
+						$logger->debug("Compare etags $ENV{HTTP_IF_NONE_MATCH} and $etag");
+					}
 					if(($ENV{'HTTP_IF_NONE_MATCH'} eq $etag) && $generate_304) {
 						push @o, "Status: 304 Not Modified";
 						$status = 304;
