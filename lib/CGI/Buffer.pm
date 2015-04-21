@@ -11,7 +11,7 @@ use HTTP::Date;
 
 =head1 NAME
 
-CGI::Buffer - Verify and Optimise CGI Output
+CGI::Buffer - Verify, Cache and Optimise CGI Output
 
 =head1 VERSION
 
