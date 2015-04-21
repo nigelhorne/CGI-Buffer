@@ -270,6 +270,7 @@ END {
 
 	if((length($encoding) > 0) && defined($body)) {
 		my $range = $ENV{'Range'} ? $ENV{'Range'} : $ENV{'HTTP_RANGE'};
+
 		if($range && !$cache) {
 			# TODO: Partials
 			if($range =~ /^bytes=(\d*)-(\d*)/) {
@@ -588,6 +589,10 @@ END {
 }
 
 sub _check_modified_since {
+	if($logger) {
+		$logger->trace('In _check_modified_since');
+	}
+
 	if(!$generate_304) {
 		return;
 	}
