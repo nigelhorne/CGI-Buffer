@@ -107,8 +107,13 @@ END {
 	read($CGI::Buffer::buf, $buf, $pos);
 	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
 
-	if($ENV{'HTTP_IF_NONE_MATCH'} && $logger) {
-		$logger->debug("HTTP_IF_NONE_MATCH: $ENV{HTTP_IF_NONE_MATCH}");
+	if($logger) {
+		if($ENV{'HTTP_IF_NONE_MATCH'}) {
+			$logger->debug("HTTP_IF_NONE_MATCH: $ENV{HTTP_IF_NONE_MATCH}");
+		}
+		if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
+			$logger->debug("HTTP_IF_MODIFIED_SINCE: $ENV{HTTP_IF_MODIFIED_SINCE}");
+		}
 	}
 	unless($headers || is_cached()) {
 		# There was no output
