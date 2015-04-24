@@ -258,6 +258,9 @@ END {
 		$encode_loaded = 1;
 		$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 		push @o, "ETag: $etag";
+		if($logger) {
+			$logger->debug("Set ETag to $etag");
+		}
 		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304 && ($status == 200)) {
 			if($logger) {
 				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
@@ -431,6 +434,9 @@ END {
 				}
 			} elsif($generate_etag && defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
 				push @o, "ETag: $etag";
+				if($logger) {
+					$logger->debug("Set ETag to $etag");
+				}
 			}
 			if($cobject) {
 				if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && !$cannot_304) {
