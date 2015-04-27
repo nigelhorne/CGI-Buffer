@@ -446,7 +446,11 @@ END {
 						since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
 						modified => $cobject->created_at()
 					});
-				} elsif($generate_last_modified) {
+				}
+				if(($status == 200) && $generate_last_modified) {
+					if($logger) {
+						$logger->debug('Set Last-Modified to ' . HTTP::Date::time2str($cobject->created_at()));
+					}
 					push @o, "Last-Modified: " . HTTP::Date::time2str($cobject->created_at());
 				}
 			}
