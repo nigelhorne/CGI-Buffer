@@ -95,6 +95,16 @@ BEGIN {
 
 END {
 	if($logger) {
+		if($ENV{'HTTP_IF_NONE_MATCH'}) {
+			$logger->debug("HTTP_IF_NONE_MATCH: $ENV{HTTP_IF_NONE_MATCH}");
+		}
+		if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
+			$logger->debug("HTTP_IF_MODIFIED_SINCE: $ENV{HTTP_IF_MODIFIED_SINCE}");
+		}
+		$logger->debug("Generate_etag = $generate_etag");
+		$logger->debug("Generate_304 = $generate_304");
+		$logger->debug("Generate_last_modified = $generate_last_modified");
+
 		# This will cause everything to get flushed and prevent
 		# outputs to the logger.  We need to do that now since
 		# if we leave it to Perl to delete later we may get
@@ -107,14 +117,6 @@ END {
 	read($CGI::Buffer::buf, $buf, $pos);
 	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
 
-	if($logger) {
-		if($ENV{'HTTP_IF_NONE_MATCH'}) {
-			$logger->debug("HTTP_IF_NONE_MATCH: $ENV{HTTP_IF_NONE_MATCH}");
-		}
-		if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
-			$logger->debug("HTTP_IF_MODIFIED_SINCE: $ENV{HTTP_IF_MODIFIED_SINCE}");
-		}
-	}
 	unless($headers || is_cached()) {
 		# There was no output
 		return;
