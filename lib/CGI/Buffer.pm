@@ -248,6 +248,10 @@ END {
 		$status = $1;
 	}
 
+	if($logger) {
+		$logger->debug("Initial status = $status");
+	}
+
 	# Generate the eTag before compressing, since the compressed data
 	# includes the mtime field which changes thus causing a different
 	# Etag to be generated
