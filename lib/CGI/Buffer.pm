@@ -413,6 +413,9 @@ END {
 							require Encode;
 							$encode_loaded = 1;
 						}
+						if($generate_etag && !defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
+							$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
+						}
 						my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
 						if(length($nbody) < length($body)) {
 							$body = $nbody;
@@ -423,10 +426,12 @@ END {
 				}
 			}
 			my $cannot_304 = !$generate_304;
-			if(defined($headers) && ($headers =~ /^ETag: "([a-z0-9]{32})"/m)) {
-				$etag = $1;
-			} else {
-				$etag = $cache_hash->{'etag'};
+			unless($etag) {
+				if(defined($headers) && ($headers =~ /^ETag: "([a-z0-9]{32})"/m)) {
+					$etag = $1;
+				} else {
+					$etag = $cache_hash->{'etag'};
+				}
 			}
 			if($ENV{'HTTP_IF_NONE_MATCH'} && $send_body && ($status != 304) && $generate_304) {
 				if(defined($etag) && ($etag eq $ENV{'HTTP_IF_NONE_MATCH'}) && ($status == 200)) {
