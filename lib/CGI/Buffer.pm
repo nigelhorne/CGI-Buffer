@@ -390,6 +390,9 @@ END {
 							$encode_loaded = 1;
 						}
 						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
+						if($logger) {
+							$logger->debug("Set ETag to $etag");
+						}
 					}
 					if($logger && $generate_304) {
 						$logger->debug("Compare etags $ENV{HTTP_IF_NONE_MATCH} and $etag");
