@@ -264,10 +264,6 @@ END {
 		require Encode;
 		$encode_loaded = 1;
 		$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-		push @o, "ETag: $etag";
-		if($logger) {
-			$logger->debug("Set ETag to $etag");
-		}
 		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304 && ($status == 200)) {
 			if($logger) {
 				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
@@ -390,9 +386,6 @@ END {
 							$encode_loaded = 1;
 						}
 						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-						if($logger) {
-							$logger->debug("Set ETag to $etag");
-						}
 					}
 					if($logger && $generate_304) {
 						$logger->debug("Compare etags $ENV{HTTP_IF_NONE_MATCH} and $etag");
@@ -446,11 +439,6 @@ END {
 					}
 				} else {
 					$cannot_304 = 1;
-				}
-			} elsif($generate_etag && defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
-				push @o, "ETag: $etag";
-				if($logger) {
-					$logger->debug("Set ETag to $etag");
 				}
 			}
 			if($cobject) {
@@ -538,11 +526,15 @@ END {
 		$cache = undef;
 	} elsif($info) {
 		my $host_name = $info->host_name();
-		push @o, "X-Cache: MISS from $host_name";
-		push @o, "X-Cache-Lookup: MISS from $host_name";
+		push @o, ("X-Cache: MISS from $host_name", "X-Cache-Lookup: MISS from $host_name");
 	} else {
-		push @o, 'X-Cache: MISS';
-		push @o, 'X-Cache-Lookup: MISS';
+		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
+	}
+	if($generate_etag && defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
+		push @o, "ETag: $etag";
+		if($logger) {
+			$logger->debug("Set ETag to $etag");
+		}
 	}
 
 	my $body_length;
@@ -576,8 +568,7 @@ END {
 	}
 
 	if($body_length && $send_body) {
-		push @o, '';
-		push @o, $body;
+		push @o, ('', $body);
 	}
 
 	# XXXXXXXXXXXXXXXXXXXXXXX
