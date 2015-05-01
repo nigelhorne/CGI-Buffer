@@ -530,10 +530,14 @@ END {
 	} else {
 		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
 	}
-	if($generate_etag && defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
-		push @o, "ETag: $etag";
-		if($logger) {
-			$logger->debug("Set ETag to $etag");
+	if($generate_etag && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
+		if(defined($etag)) {
+			push @o, "ETag: $etag";
+			if($logger) {
+				$logger->debug("Set ETag to $etag");
+			}
+		} elsif(($status == 200) && $logger) {
+			$logger->warn("BUG: ETag not generated");
 		}
 	}
 
