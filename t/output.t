@@ -145,10 +145,11 @@ OUTPUT: {
 	ok($output =~ /^Content-Length:\s+(\d+)/m);
 	$length = $1;
 	ok(defined($length));
-	ok($output =~ /^Content-Encoding: gzip/m);
-	ok($output =~ /ETag: "[A-Za-z0-F0-f]{32}"/m);
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+	ok($headers =~ /^Content-Encoding: gzip/m);
+	ok($headers =~ /ETag: "[A-Za-z0-F0-f]{32}"/m);
+
 	ok(length($body) eq $length);
 	$body = Compress::Zlib::memGunzip($body);
 	ok(defined($body));
@@ -184,11 +185,12 @@ OUTPUT: {
 
 	ok($output =~ /href="\/"/m);
 	ok($output !~ /<script>\s/m);
-	ok($output =~ /^Content-Length:\s+(\d+)/m);
+
+	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+	ok($headers =~ /^Content-Length:\s+(\d+)/m);
 	$length = $1;
 	ok(defined($length));
 
-	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 	ok(length($body) eq $length);
 	ok($body !~ /www.example.com/m);
 
