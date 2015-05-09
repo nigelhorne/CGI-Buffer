@@ -9,6 +9,7 @@ lib/CGI/Buffer.pm
 META.yml                                 Module meta-data (added by MakeMaker)
 src/testit
 t/00-load.t
+t/apoc.t
 t/boiler.t
 t/changes.t
 t/coverage.t
