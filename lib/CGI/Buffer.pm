@@ -94,7 +94,10 @@ BEGIN {
 }
 
 END {
-	return if ${^GLOBAL_PHASE} eq 'DESTRUCT';	# >= 5.14.0 only
+	if(defined($^V) && ($^V ge 'v5.14.0')) {
+		return if ${^GLOBAL_PHASE} eq 'DESTRUCT';	# >= 5.14.0 only
+	}
+
 	if($logger) {
 		if($ENV{'HTTP_IF_NONE_MATCH'}) {
 			$logger->debug("HTTP_IF_NONE_MATCH: $ENV{HTTP_IF_NONE_MATCH}");
