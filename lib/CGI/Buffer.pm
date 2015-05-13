@@ -539,7 +539,7 @@ END {
 			if($logger) {
 				$logger->debug("Set ETag to $etag");
 			}
-		} elsif($logger) {
+		} elsif($logger && (($status == 200) || $status == 304)) {
 			$logger->warn("BUG: ETag not generated, status $status");
 		}
 	}
