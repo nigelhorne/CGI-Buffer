@@ -751,6 +751,7 @@ Set various options and override default values.
 	optimise_content => 0,	# optimise your program's HTML, CSS and JavaScript
 	cache => CHI->new(driver => 'File'),	# cache requests
 	cache_key => 'string',	# key for the cache
+	cache_age => '10 minutes',	# how long to store responses in the cache
 	logger => $logger,
 	lint->content => 0,	# Pass through HTML::Lint
 	generate_304 => 1,	# Generate 304: Not modified
@@ -761,7 +762,12 @@ The cache_key should be a unique value dependent upon the values set by the
 browser.
 
 The cache object will be an object that understands get_object(),
-set(), remove() and created_at() messages, such as an L<CHI> object.
+set(), remove() and created_at() messages, such as an L<CHI> object. It is
+used as a server-side cache to reduce the need to rerun database accesses.
+
+Items stay in the server-side cache by default for 10 minutes.
+This can be overridden by the cache_control HTTP header in the request, and
+the default can be changed by the cache_age argument to init().
 
 Logger will be an object that understands debug() such as an L<Log::Log4perl>
 object.
@@ -834,6 +840,8 @@ sub init {
 				if(defined($logger)) {
 					$logger->debug("cache_age = $cache_age");
 				}
+			} elsif(defined($params{cache_age})) {
+				$cache_age = $params{cache_age};
 			}
 		}
 		$cache = $params{cache};
