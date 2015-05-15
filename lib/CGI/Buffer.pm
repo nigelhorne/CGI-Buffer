@@ -840,10 +840,9 @@ sub init {
 				if(defined($logger)) {
 					$logger->debug("cache_age = $cache_age");
 				}
-			} elsif(defined($params{cache_age})) {
-				$cache_age = $params{cache_age};
 			}
 		}
+		$cache_age ||= $params{cache_age};
 		$cache = $params{cache};
 		if(defined($params{cache_key})) {
 			$cache_key = $params{cache_key};
