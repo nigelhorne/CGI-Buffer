@@ -989,7 +989,8 @@ sub is_cached {
 		$cobject = undef;
 		# Nothing will be in date and all new searches would miss
 		# anyway, so may as well clear it all
-		$cache->clear();
+		# FIXME: RT104471
+		# $cache->clear();
 		return 0;
 	}
 	if($logger) {
