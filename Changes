@@ -1,12 +1,10 @@
 Revision history for CGI-Buffer
 
-0.76
+0.75	Sun May 17 09:00:46 EDT 2015
 	Added X-Cache and X-Cache-Lookup headers
 	Fixed overly agressive optimisation
 	Don't use the cache if the client sends max-age=0
 	Added cache_age option to init()
-
-0.75
 	Fix set_options when given a ref
 	Fix RT102226
 	Improved handling of Wide characters

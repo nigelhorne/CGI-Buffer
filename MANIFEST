@@ -33,7 +33,6 @@ t/snippets.t
 t/spelling.t
 t/strict.t
 t/too_late.t
-t/unused.t
 t/used.t
 t/vars.t
 META.json                                Module JSON meta-data (added by MakeMaker)
