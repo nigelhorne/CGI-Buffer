@@ -29,7 +29,7 @@ WriteMakefile(
 	# 'HTML::Clean' => 0.8,
 	'HTML::Packer' => 1.000,
 	'IO::String' => 0,
-	'JavaScript::Packer' => 1.006003,
+	'JavaScript::Packer' => 2.00,
 	'HTTP::Date' => 0,
 	'File::Spec' => 0,
 	'Time::localtime' => 0,
