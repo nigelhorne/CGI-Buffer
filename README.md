@@ -1,4 +1,4 @@
 CGI-Buffer
 ==========
 
-Verify and Optimise CGI Output
+Verify, Cache and Optimise CGI Output
