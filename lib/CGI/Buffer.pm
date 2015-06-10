@@ -137,13 +137,7 @@ END {
 	}
 
 	if($headers) {
-		foreach my $header (split(/\r?\n/, $headers)) {
-			my ($header_name, $header_value) = split /\:\s*/, $header, 2;
-			if (lc($header_name) eq 'content-type') {
-				@content_type = split /\//, $header_value, 2;
-				last;
-			}
-		}
+		_set_content_type($headers);
 	}
 
 	if(defined($body) && ($body eq '')) {
@@ -337,6 +331,7 @@ END {
 				if(defined($cobject)) {
 					$cache_hash = Storable::thaw($cobject->value());
 					$headers = $cache_hash->{'headers'};
+					_set_content_type($headers);
 					@o = ("X-CGI-Buffer-$VERSION: Hit");
 					if($info) {
 						my $host_name = $info->host_name();
@@ -407,6 +402,9 @@ END {
 						}
 					}
 				}
+			}
+			if($status == 200) {
+				$encoding = _should_gzip();
 				if($send_body && (length($encoding) > 0)) {
 					if(length($body) >= MIN_GZIP_LEN) {
 						require Compress::Zlib;
@@ -1039,6 +1037,19 @@ sub _should_gzip {
 	}
 
 	return '';
+}
+
+sub _set_content_type
+{
+	my $headers = shift;
+
+	foreach my $header (split(/\r?\n/, $headers)) {
+		my ($header_name, $header_value) = split /\:\s*/, $header, 2;
+		if (lc($header_name) eq 'content-type') {
+			@content_type = split /\//, $header_value, 2;
+			last;
+		}
+	}
 }
 
 =head1 AUTHOR
