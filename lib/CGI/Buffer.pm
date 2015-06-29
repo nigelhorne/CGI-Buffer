@@ -496,6 +496,9 @@ END {
 				if($generate_etag && defined($etag)) {
 					$cache_hash->{'etag'} = $etag
 				}
+				# TODO: Support the Expires header
+				# if($headers !~ /^Expires: /m))) {
+				# }
 				$cache->set($key, Storable::freeze($cache_hash), $cache_age);
 				if($logger) {
 					$logger->debug("store $key in the cache");
@@ -889,6 +892,7 @@ sub can_cache {
 		if(defined($logger)) {
 			$logger->debug("cache_control = $control");
 		}
+		# TODO: check Authorization header not present
 		if(($control eq 'no-store') ||
 		       ($control eq 'no-cache') ||
 		       ($control eq 'max-age=0') ||
