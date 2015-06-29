@@ -153,6 +153,9 @@ END {
 			# require HTML::Clean;
 			require HTML::Packer;	# Overkill using HTML::Clean and HTML::Packer...
 
+			if($logger) {
+				$logger->trace('Packer');
+			}
 			my $oldlength = length($body);
 			my $newlength;
 
@@ -229,6 +232,9 @@ END {
 			require HTML::Lint;
 			HTML::Lint->import;
 
+			if($logger) {
+				$logger->trace('Lint');
+			}
 			my $lint = HTML::Lint->new();
 			$lint->parse($body);
 
