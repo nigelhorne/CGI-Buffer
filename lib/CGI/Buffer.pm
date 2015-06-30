@@ -160,7 +160,7 @@ END {
 			my $newlength;
 
 			while(1) {
-				$body = _optimise_content($body);
+				_optimise_content();
 				$newlength = length($body);
 				last if ($newlength >= $oldlength);
 				$oldlength = $newlength;
@@ -670,15 +670,13 @@ sub _check_modified_since {
 }
 
 sub _optimise_content {
-	my $body = shift;
-
 	# Regexp::List - wow!
-	$body =~ s/(\s+|\r)\n|\n\+/\n/gs;
+	$body =~ s/(?^:(?:\n(?:\s+|\s+\n|\+)|(?:\s+|\r)\n))/\n/g;
 	# $body =~ s/\r\n/\n/gs;
 	# $body =~ s/\s+\n/\n/gs;
 	# $body =~ s/\n+/\n/gs;
-	$body =~ s/\<\/option\>\s\<option/\<\/option\>\<option/gis;
-	$body =~ s/\<\/div\>\s\<div/\<\/div\>\<div/gis;
+	# $body =~ s/\n\s+|\s+\n/\n/g;
+	$body =~ s/\<\/div\>\s+\<div/\<\/div\>\<div/gis;
 	# $body =~ s/\<\/p\>\s\<\/div/\<\/p\>\<\/div/gis;
 	# $body =~ s/\<div\>\s+/\<div\>/gis;	# Remove spaces after <div>
 	$body =~ s/(<div>\s+|\s+<div>)/<div>/gis;
@@ -691,8 +689,6 @@ sub _optimise_content {
 	$body =~ s/<body>\s+/<body>/is;
 	$body =~ s/\s+\<\/html/\<\/html/is;
 	$body =~ s/\s+\<\/body/\<\/body/is;
-	$body =~ s/\n\s+|\s+\n/\n/g;
-	$body =~ s/\t+/ /g;
 	$body =~ s/\s(\<.+?\>\s\<.+?\>)/$1/;
 	# $body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/g;
 	$body =~ s/\<p\>\s/\<p\>/gi;
@@ -704,7 +700,7 @@ sub _optimise_content {
 	$body =~ s/\<br\s?\/?\>\s?\<p\>/\<p\>/gi;
 	$body =~ s/\<br\>\s/\<br\>/gi;
 	$body =~ s/\<br\s?\/\>\s/\<br \/\>/gi;
-	$body =~ s/ +/ /gs;	# Remove duplicate space, don't use \s+ it breaks JavaScript
+	$body =~ s/[ \t]+/ /gs;	# Remove duplicate space, don't use \s+ it breaks JavaScript
 	$body =~ s/\s\<p\>/\<p\>/gi;
 	$body =~ s/\s\<script/\<script/gi;
 	$body =~ s/(<script>\s|\s<script>)/<script>/gis;
@@ -715,11 +711,10 @@ sub _optimise_content {
 	$body =~ s/(\s?<hr>\s|\s<hr>\s?)/<hr>/gis;
 	# $body =~ s/\s<hr>/<hr>/gis;
 	# $body =~ s/<hr>\s/<hr>/gis;
-	$body =~ s/<\/li>\s<li>/<\/li><li>/gis;
-	$body =~ s/<\/li>\s<\/ul>/<\/li><\/ul>/gis;
-	$body =~ s/<ul>\s<li>/<ul><li>/gis;
-
-	return $body;
+	$body =~ s/<\/li>\s+<li>/<\/li><li>/gis;
+	$body =~ s/<\/li>\s+<\/ul>/<\/li><\/ul>/gis;
+	$body =~ s/<ul>\s+<li>/<ul><li>/gis;
+	$body =~ s/\<\/option\>\s+\<option/\<\/option\>\<option/gis;
 }
 
 # Create a key for the cache
