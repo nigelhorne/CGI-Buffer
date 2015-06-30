@@ -755,6 +755,9 @@ sub _generate_key {
 		}
 	}
 	$key =~ s/\//::/g;
+	if(defined($logger)) {
+		$logger->trace("Returning $key");
+	}
 	return $key;
 }
 
