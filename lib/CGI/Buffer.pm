@@ -738,6 +738,22 @@ sub _generate_key {
 		# Different states of the client are stored in different caches
 		$key .= '::' . $ENV{'HTTP_COOKIE'};
 	}
+
+	# Honour the Vary headers
+	if($headers && ($headers =~ /^Vary: (.*)/m)) {
+		foreach my $h1(split(/\r?\n/, $headers)) {
+			my ($h1_name, $h1_value) = split /\:\s*/, $h1, 2;
+			if(lc($h1_name) eq 'vary') {
+				foreach my $h2(split(/\r?\n/, $headers)) {
+					my ($h2_name, $h2_value) = split /\:\s*/, $h2, 2;
+					if($h2_name eq $h1_value) {
+						$key .= '::' . $h2_value;
+						last;
+					}
+				}
+			}
+		}
+	}
 	$key =~ s/\//::/g;
 	return $key;
 }

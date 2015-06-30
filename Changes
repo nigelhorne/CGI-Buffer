@@ -1,6 +1,7 @@
 Revision history for CGI-Buffer
 
 0.76
+	generate_key - honour the vary header
 	Fix problem were server side cached contents weren't compressed when
 		loading the content from the cache
 
