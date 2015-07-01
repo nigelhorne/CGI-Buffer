@@ -762,6 +762,7 @@ sub _generate_key {
 	if(defined($logger)) {
 		$logger->trace("Returning $key");
 	}
+	$cache_key = $key;
 	return $key;
 }
 
