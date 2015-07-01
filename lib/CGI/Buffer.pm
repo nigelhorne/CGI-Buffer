@@ -731,7 +731,14 @@ sub _generate_key {
 	my $key = $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
 	if($ENV{'HTTP_COOKIE'}) {
 		# Different states of the client are stored in different caches
-		$key .= '::' . $ENV{'HTTP_COOKIE'};
+		my $cookies = $ENV{'HTTP_COOKIE'};
+		# Don't put different Google Analytics in different caches, and anyway they
+		# would be wrong
+		foreach my $cookie(split(/;/, $ENV{'HTTP_COOKIE'})) {
+			unless($cookie =~ /^__utm[abcz]/) {
+				$key .= "::$cookie";
+			}
+		}
 	}
 
 	# Honour the Vary headers
@@ -750,6 +757,8 @@ sub _generate_key {
 		}
 	}
 	$key =~ s/\//::/g;
+	$key =~ s/::::/::/g;
+	$key =~ s/::$//;
 	if(defined($logger)) {
 		$logger->trace("Returning $key");
 	}
