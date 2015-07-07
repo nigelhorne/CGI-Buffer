@@ -709,7 +709,7 @@ sub _optimise_content {
 	$body =~ s/(<script>\s|\s<script>)/<script>/gis;
 	$body =~ s/(<\/script>\s|\s<\/script>)/<\/script>/gis;
 	$body =~ s/\<td\>\s/\<td\>/gi;
-	$body =~ s/\s?\<a\shref="(.+?)"\>\s?/ <a href="$1">/gis;
+	$body =~ s/\s+\<a\shref="(.+?)"\>\s?/ <a href="$1">/gis;
 	$body =~ s/\s?<a\shref=\s"(.+?)"\>/ <a href="$1">/gis;
 	$body =~ s/(\s?<hr>\s|\s<hr>\s?)/<hr>/gis;
 	# $body =~ s/\s<hr>/<hr>/gis;
