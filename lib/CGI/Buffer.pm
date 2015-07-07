@@ -442,6 +442,9 @@ END {
 				}
 			}
 			if($ENV{'HTTP_IF_NONE_MATCH'} && $send_body && ($status != 304) && $generate_304) {
+				if($logger) {
+					$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
+				}
 				if(defined($etag) && ($etag eq $ENV{'HTTP_IF_NONE_MATCH'}) && ($status == 200)) {
 					push @o, "Status: 304 Not Modified";
 					$send_body = 0;
