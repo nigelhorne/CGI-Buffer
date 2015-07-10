@@ -263,6 +263,7 @@ OUTPUT: {
 
 	#..........................................
 	# Check for removal of consecutive white space between links
+	delete $ENV{'HTTP_TE'};
 	$filename = tempdir() . 'test8';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {

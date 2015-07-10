@@ -156,14 +156,19 @@ END {
 			if($logger) {
 				$logger->trace('Packer');
 			}
+
 			my $oldlength = length($body);
 			my $newlength;
 
-			while(1) {
+			if($optimise_content == 1) {
 				_optimise_content();
-				$newlength = length($body);
-				last if ($newlength >= $oldlength);
-				$oldlength = $newlength;
+			} else {
+				while(1) {
+					_optimise_content();
+					$newlength = length($body);
+					last if ($newlength >= $oldlength);
+					$oldlength = $newlength;
+				}
 			}
 
 			# If we're on http://www.example.com and have a link
@@ -290,7 +295,7 @@ END {
 	my $encoding = _should_gzip();
 	my $unzipped_body = $body;
 
-	if((length($encoding) > 0) && defined($body)) {
+	if(defined($body)) {
 		my $range = $ENV{'Range'} ? $ENV{'Range'} : $ENV{'HTTP_RANGE'};
 
 		if($range && !$cache) {
@@ -306,7 +311,7 @@ END {
 				$unzipped_body = $body;
 			}
 		}
-		if(length($body) >= MIN_GZIP_LEN) {
+		if((length($encoding) > 0) && (length($body) >= MIN_GZIP_LEN)) {
 			require Compress::Zlib;
 			Compress::Zlib->import;
 
@@ -674,7 +679,7 @@ sub _check_modified_since {
 
 sub _optimise_content {
 	# Regexp::List - wow!
-	$self->{body} =~ s/(?^:(?:(?:\s+|\r)\n|\n(?:\s+|\+)))/\n/g;
+	$body =~ s/(?^:(?:(?:\s+|\r)\n|\n(?:\s+|\+)))/\n/g;
 	# $body =~ s/\r\n/\n/gs;
 	# $body =~ s/\s+\n/\n/gs;
 	# $body =~ s/\n+/\n/gs;
@@ -711,7 +716,8 @@ sub _optimise_content {
 	$body =~ s/\<td\>\s/\<td\>/gi;
 	$body =~ s/\s+\<a\shref="(.+?)"\>\s?/ <a href="$1">/gis;
 	$body =~ s/\s?<a\shref=\s"(.+?)"\>/ <a href="$1">/gis;
-	$body =~ s/(\s?<hr>\s|\s<hr>\s?)/<hr>/gis;
+	$body =~ s/\s+<\/a\>\s+/<\/a> /gis;
+	$body =~ s/(\s?<hr>\s+|\s+<hr>\s?)/<hr>/gis;
 	# $body =~ s/\s<hr>/<hr>/gis;
 	# $body =~ s/<hr>\s/<hr>/gis;
 	$body =~ s/<\/li>\s+<li>/<\/li><li>/gis;
