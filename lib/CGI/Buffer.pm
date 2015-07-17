@@ -662,6 +662,9 @@ sub _check_modified_since {
 	if(!defined($age)) {
 		return;
 	}
+	if($logger) {
+		$logger->debug("_check_modified_since: Compage $age with $s");
+	}
 	if($age > $s) {
 		# Script has been updated so it may produce different output
 		return;
