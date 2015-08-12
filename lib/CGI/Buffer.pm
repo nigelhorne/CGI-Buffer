@@ -663,10 +663,16 @@ sub _check_modified_since {
 		return;
 	}
 	if($age > $s) {
+		if($logger) {
+			$logger->debug('_check_modified_since: script has been modified');
+		}
 		# Script has been updated so it may produce different output
 		return;
 	}
 
+	if($logger) {
+		$logger->debug("_check_modified_since: Compare $$params{modified} with $s");
+	}
 	if($$params{modified} <= $s) {
 		push @o, "Status: 304 Not Modified";
 		$status = 304;
