@@ -56,6 +56,9 @@ But that's simple:
 
     # ...
 
+To temporarily prevent the use of server-side caches, for example whilst
+debugging before publishing a code change, set the NO_CACHE environment variable
+to any non-zero value.
 If you get errors about Wide characters in print it means that you've
 forgotten to emit pure HTML on non-ascii characters.
 See L<HTML::Entities>.
