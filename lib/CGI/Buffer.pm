@@ -88,7 +88,7 @@ our $status;
 our $script_mtime;
 our $cobject;
 our($x_cache, $buf, $headers, $header, $body, @content_type, $etag,
-	$send_body, @o);
+	$send_body, @o, $encode_loaded);
 
 BEGIN {
 	# use Exporter();
@@ -273,7 +273,6 @@ END {
 	# Generate the eTag before compressing, since the compressed data
 	# includes the mtime field which changes thus causing a different
 	# Etag to be generated
-	my $encode_loaded;
 	if($ENV{'SERVER_PROTOCOL'} &&
 	  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') &&
 	  $generate_etag && defined($body)) {
@@ -301,7 +300,7 @@ END {
 	my $encoding = _should_gzip();
 	my $unzipped_body = $body;
 
-	if(defined($body)) {
+	if(defined($unzipped_body)) {
 		my $range = $ENV{'Range'} ? $ENV{'Range'} : $ENV{'HTTP_RANGE'};
 
 		if($range && !$cache) {
@@ -317,22 +316,7 @@ END {
 				$unzipped_body = $body;
 			}
 		}
-		if((length($encoding) > 0) && (length($body) >= MIN_GZIP_LEN)) {
-			require Compress::Zlib;
-			Compress::Zlib->import;
-
-			# Avoid 'Wide character in memGzip'
-			unless($encode_loaded) {
-				require Encode;
-				$encode_loaded = 1;
-			}
-			my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
-			if(length($nbody) < length($body)) {
-				$body = $nbody;
-				push @o, "Content-Encoding: $encoding";
-				push @o, "Vary: Accept-Encoding";
-			}
-		}
+		_compress({ encoding => $encoding });
 	}
 
 	if($cache) {
@@ -422,26 +406,11 @@ END {
 			}
 			if($status == 200) {
 				$encoding = _should_gzip();
-				if($send_body && (length($encoding) > 0)) {
-					if(length($body) >= MIN_GZIP_LEN) {
-						require Compress::Zlib;
-						Compress::Zlib->import;
-
-						# Avoid 'Wide character in memGzip'
-						unless($encode_loaded) {
-							require Encode;
-							$encode_loaded = 1;
-						}
-						if($generate_etag && !defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
-							$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-						}
-						my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
-						if(length($nbody) < length($body)) {
-							$body = $nbody;
-							push @o, "Content-Encoding: $encoding";
-							push @o, "Vary: Accept-Encoding";
-						}
+				if($send_body) {
+					if($generate_etag && !defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
+						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 					}
+					_compress({ encoding => $encoding });
 				}
 			}
 			my $cannot_304 = !$generate_304;
@@ -1108,6 +1077,31 @@ sub _set_content_type
 			@content_type = split /\//, $header_value, 2;
 			last;
 		}
+	}
+}
+
+sub _compress {
+	my %params = (ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
+
+	my $encoding = $params{encoding};
+
+	if((length($encoding) == 0) || (length($body) < MIN_GZIP_LEN)) {
+		return;
+	}
+
+	require Compress::Zlib;
+	Compress::Zlib->import;
+
+	# Avoid 'Wide character in memGzip'
+	unless($encode_loaded) {
+		require Encode;
+		$encode_loaded = 1;
+	}
+	my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
+	if(length($nbody) < length($body)) {
+		$body = $nbody;
+		push @o, "Content-Encoding: $encoding";
+		push @o, "Vary: Accept-Encoding";
 	}
 }
 
