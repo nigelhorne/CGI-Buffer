@@ -516,10 +516,10 @@ END {
 				# TODO: Support the Expires header
 				# if($headers !~ /^Expires: /m))) {
 				# }
-				$cache->set($key, Storable::freeze($cache_hash), $cache_age);
 				if($logger) {
-					$logger->debug("store $key in the cache");
+					$logger->debug("store $key in the cache, age = $cache_age");
 				}
+				$cache->set($key, Storable::freeze($cache_hash), $cache_age);
 				if($generate_last_modified) {
 					$cobject = $cache->get_object($key);
 					if(defined($cobject)) {
