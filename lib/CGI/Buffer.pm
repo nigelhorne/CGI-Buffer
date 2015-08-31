@@ -445,7 +445,7 @@ END {
 				}
 				if(($status == 200) && $generate_last_modified) {
 					if($logger) {
-						$logger->debug('Set Last-Modified to ' . HTTP::Date::time2str($cobject->created_at()));
+						$logger->debug('Set Last-Modified to ', HTTP::Date::time2str($cobject->created_at()));
 					}
 					push @o, "Last-Modified: " . HTTP::Date::time2str($cobject->created_at());
 				}
