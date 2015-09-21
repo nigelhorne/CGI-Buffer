@@ -661,7 +661,7 @@ sub _check_modified_since {
 
 sub _optimise_content {
 	# Regexp::List - wow!
-	$body =~ s/(?^:(?:(?:\s+|\r)\n|\n(?:\s+|\+)))/\n/g;
+	$body =~ s/(((\s+|\r)\n|\n(\s+|\+)))/\n/g;
 	# $body =~ s/\r\n/\n/gs;
 	# $body =~ s/\s+\n/\n/gs;
 	# $body =~ s/\n+/\n/gs;
