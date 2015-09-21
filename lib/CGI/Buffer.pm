@@ -706,6 +706,7 @@ sub _optimise_content {
 	$body =~ s/<\/li>\s+<\/ul>/<\/li><\/ul>/gis;
 	$body =~ s/<ul>\s+<li>/<ul><li>/gis;
 	$body =~ s/\<\/option\>\s+\<option/\<\/option\>\<option/gis;
+	$body =~ s/<title>\s*(.+)\s*<\/title>/<title>$1<\/title>/is;
 }
 
 # Create a key for the cache
