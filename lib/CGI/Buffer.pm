@@ -490,7 +490,7 @@ END {
 				# if($headers !~ /^Expires: /m))) {
 				# }
 				if($logger) {
-					$logger->debug("store $key in the cache, age = $cache_age");
+					$logger->debug("Store $key in the cache, age = $cache_age ", length($cache_hash->{'body'}), ' bytes');
 				}
 				$cache->set($key, Storable::freeze($cache_hash), $cache_age);
 				if($generate_last_modified) {
