@@ -660,6 +660,7 @@ sub _check_modified_since {
 }
 
 sub _optimise_content {
+	# FIXME: regex bad, HTML parser good
 	# Regexp::List - wow!
 	$body =~ s/(((\s+|\r)\n|\n(\s+|\+)))/\n/g;
 	# $body =~ s/\r\n/\n/gs;
