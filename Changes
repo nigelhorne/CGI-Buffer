@@ -4,6 +4,8 @@ Revision history for CGI-Buffer
 	generate_key - honour the vary header
 	Fix problem were server side cached contents weren't compressed when
 		loading the content from the cache
+	If you give a cache to init() then later give cache => undef,
+		the server side cache is no longer used.
 
 0.75	Sun May 17 09:00:46 EDT 2015
 	Added X-Cache and X-Cache-Lookup headers

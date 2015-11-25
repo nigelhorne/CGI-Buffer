@@ -869,7 +869,19 @@ sub init {
 			}
 		}
 		$cache_age ||= $params{cache_age};
-		$cache = $params{cache};
+
+		if((!defined($params{cache})) && defined($cache)) {
+			if(defined($logger)) {
+				if($cache_key) {
+					$logger->debug("disabling cache $cache_key");
+				} else {
+					$logger->debug('disabling cache');
+				}
+			}
+			$cache = undef;
+		} else {
+			$cache = $params{cache};
+		}
 		if(defined($params{cache_key})) {
 			$cache_key = $params{cache_key};
 		}
