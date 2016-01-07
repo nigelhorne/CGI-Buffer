@@ -460,7 +460,7 @@ END {
 					$cache_age = '10 minutes';
 				}
 				$cache_hash->{'body'} = $unzipped_body;
-				if(@o && scalar(@o)) {
+				if(defined(@o) && scalar(@o)) {
 					# Remember, we're storing the UNzipped
 					# version in the cache
 					my $c;
@@ -892,7 +892,7 @@ sub import {
 	# my $class = shift;
 	shift;
 
-	return unless @_;
+	return unless defined(@_);
 
 	init(@_);
 }
@@ -1065,7 +1065,7 @@ sub _should_gzip {
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
 		foreach my $encoding ('x-gzip', 'gzip') {
 			$_ = $accept;
-			if(@content_type && $content_type[0]) {
+			if(defined(@content_type) && $content_type[0]) {
 				if (m/$encoding/i && (lc($content_type[0]) eq 'text')) {
 					return $encoding;
 				}
