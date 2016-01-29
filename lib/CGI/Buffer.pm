@@ -131,7 +131,9 @@ END {
 	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
 
 	unless($headers || is_cached()) {
-		# There was no output
+		if($logger) {
+			$logger->debug('There was no output');
+		}
 		return;
 	}
 	if($ENV{'REQUEST_METHOD'} && ($ENV{'REQUEST_METHOD'} eq 'HEAD')) {
