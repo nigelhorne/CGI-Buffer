@@ -294,7 +294,7 @@ END {
 					$logger->debug('Set status to 304');
 				}
 			} elsif($logger) {
-				$logger->debug(diff(\$body, \$cache->get(generate_key())));
+				$logger->debug(diff(\$body, \$cache->get(_generate_key())));
 			}
 		}
 	}
