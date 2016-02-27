@@ -1,6 +1,6 @@
 Revision history for CGI-Buffer
 
-0.77
+0.77	Sat Feb 27 11:55:55 EST 2016
 	Fix RT112029
 	Call the right routine
 

@@ -29,7 +29,7 @@ if($can_test) {
 	if(not $ENV{RELEASE_TESTING}) {
 		plan(skip_all => 'Author tests not required for installation');
 	} else {
-		new_ok('CGI::Buffer');
-		plan tests => 1;
+		use_ok('CGI::Buffer');
+		plan tests => 2;
 	}
 }
