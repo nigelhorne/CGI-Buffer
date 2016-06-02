@@ -11,10 +11,11 @@
 use strict;
 use warnings;
 
-use Test::Most tests => 101;
+use Test::Most tests => 102;
 use Test::TempDir::Tiny;
 use Compress::Zlib;
 use DateTime;
+use Test::HTML::Lint;
 # use Test::NoWarnings;	# HTML::Clean has them
 
 BEGIN {
@@ -126,11 +127,11 @@ OUTPUT: {
 			print $tmp "use lib '$_';\n";
 		}
 	}
-	print $tmp "use CGI::Buffer {optimise_content => 0};\n";
-	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
-	print $tmp "print \"\\n\\n\";\n";
+	print $tmp "use CGI::Buffer {optimise_content => 0};\n",
+		"print \"Content-type: text/html; charset=ISO-8859-1\";\n",
+		"print \"\\n\\n\";\n";
 	# Put in a large body so that it gzips - small bodies won't
-	print $tmp "print \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.01 Transitional//EN\\n\";\n";
+	print $tmp "print \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.01 Transitional//EN\\\">\\n\";\n";
 	print $tmp "print \"<HTML><HEAD><TITLE>Hello, world</TITLE></HEAD><BODY><P>The quick brown fox jumped over the lazy dog.</P></BODY></HTML>\\n\";\n";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
@@ -154,6 +155,7 @@ OUTPUT: {
 	$body = Compress::Zlib::memGunzip($body);
 	ok(defined($body));
 	ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
+	html_ok($body, 'HTML:Lint shows no errors');
 
 	#..........................................
 	delete $ENV{'SERVER_PROTOCOL'};
