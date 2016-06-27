@@ -27,9 +27,9 @@ our $VERSION = '0.77';
 CGI::Buffer verifies the HTML that you produce by passing it through
 C<HTML::Lint>.
 
-CGI::Buffer optimises CGI programs by compressing output to speed up
-the transmission and by nearly seamlessly making use of client and
-server caches.
+CGI::Buffer optimises FCGI programs by reducing, filtering and compressing
+output to speed up the transmission and by nearly seamlessly making use of
+client and server caches.
 
 To make use of client caches, that is to say to reduce needless calls
 to your server asking for the same data, all you need to do is to
@@ -661,6 +661,7 @@ sub _check_modified_since {
 	}
 }
 
+# Reduce output, e.g. remove superfluous white-space.
 sub _optimise_content {
 	# FIXME: regex bad, HTML parser good
 	# Regexp::List - wow!
