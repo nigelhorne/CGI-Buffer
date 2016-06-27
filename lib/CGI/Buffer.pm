@@ -114,9 +114,8 @@ END {
 		if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
 			$logger->debug("HTTP_IF_MODIFIED_SINCE: $ENV{HTTP_IF_MODIFIED_SINCE}");
 		}
-		$logger->debug("Generate_etag = $generate_etag");
-		$logger->debug("Generate_304 = $generate_304");
-		$logger->debug("Generate_last_modified = $generate_last_modified");
+		$logger->debug("Generate_etag = $generate_etag", "Generate_304 = $generate_304",
+			"Generate_last_modified = $generate_last_modified");
 
 		# This will cause everything to get flushed and prevent
 		# outputs to the logger.  We need to do that now since
