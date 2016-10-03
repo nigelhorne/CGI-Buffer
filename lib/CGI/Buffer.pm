@@ -1066,7 +1066,7 @@ sub _my_age {
 sub _should_gzip {
 	if($compress_content && $send_body && ($ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'})) {
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
-		foreach my $encoding ('x-gzip', 'gzip') {
+		foreach my $encoding ('x-gzip', 'gzip', 'br') {
 			$_ = $accept;
 			if(@content_type && $content_type[0]) {
 				if (m/$encoding/i && (lc($content_type[0]) eq 'text')) {
@@ -1105,19 +1105,36 @@ sub _compress {
 		return;
 	}
 
-	require Compress::Zlib;
-	Compress::Zlib->import;
+	if($encoding eq 'gzip') {
+		require Compress::Zlib;
+		Compress::Zlib->import;
 
-	# Avoid 'Wide character in memGzip'
-	unless($encode_loaded) {
-		require Encode;
-		$encode_loaded = 1;
-	}
-	my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
-	if(length($nbody) < length($body)) {
-		$body = $nbody;
-		push @o, "Content-Encoding: $encoding";
-		push @o, "Vary: Accept-Encoding";
+		# Avoid 'Wide character in memGzip'
+		unless($encode_loaded) {
+			require Encode;
+			$encode_loaded = 1;
+		}
+		my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
+		if(length($nbody) < length($body)) {
+			$body = $nbody;
+			push @o, "Content-Encoding: $encoding";
+			push @o, "Vary: Accept-Encoding";
+		}
+	} elsif($encoding eq 'br') {
+		require IO::Compress::Brotli;
+		IO::Compress::Brotli->import();
+
+		# Avoid 'Wide character in memGzip'
+		unless($encode_loaded) {
+			require Encode;
+			$encode_loaded = 1;
+		}
+		my $nbody = bro(Encode::encode_utf8($body));
+		if(length($nbody) < length($body)) {
+			$body = $nbody;
+			push @o, "Content-Encoding: $encoding";
+			push @o, "Vary: Accept-Encoding";
+		}
 	}
 }
 

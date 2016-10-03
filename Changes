@@ -2,6 +2,7 @@ Revision history for CGI-Buffer
 
 0.78
 	Print stack trace when calling init too late
+	Support Brotli
 
 0.77	Sat Feb 27 11:55:55 EST 2016
 	Fix RT112029
