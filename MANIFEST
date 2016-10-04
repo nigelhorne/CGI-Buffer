@@ -1,12 +1,13 @@
 Changes
-LICENSE
-MANIFEST
-Makefile.PL
-README
-README.md
 ignore.txt
 lib/CGI/Buffer.pm
-META.yml                                 Module meta-data (added by MakeMaker)
+LICENSE
+Makefile.PL
+MANIFEST
+META.json			Module JSON meta-data (added by MakeMaker)
+META.yml			Module meta-data (added by MakeMaker)
+README
+README.md
 src/testit
 t/00-load.t
 t/apoc.t
@@ -23,6 +24,7 @@ t/kwalitee.t
 t/last_mod.t
 t/manifest.t
 t/metrics.t
+t/namespaces.t
 t/noplan.t
 t/output.t
 t/pod-cm.t
@@ -36,4 +38,3 @@ t/too_late.t
 t/unused.t
 t/used.t
 t/vars.t
-META.json                                Module JSON meta-data (added by MakeMaker)

@@ -556,14 +556,7 @@ END {
 		# CGI::Buffer
 		unshift @o, split(/\r\n/, $headers);
 		if($body && $send_body) {
-			my $already_done = 0;
-			foreach(@o) {
-				if(/^Content-Length: /) {
-					$already_done = 1;
-					last;
-				}
-			}
-			unless($already_done) {
+			unless(grep(/^Content-Length: /, @o)) {
 				push @o, "Content-Length: $body_length";
 			}
 		}
@@ -781,7 +774,7 @@ Set various options and override default values.
 	cache_key => 'string',	# key for the cache
 	cache_age => '10 minutes',	# how long to store responses in the cache
 	logger => $logger,
-	lint->content => 0,	# Pass through HTML::Lint
+	lint_content => 0,	# Pass through HTML::Lint
 	generate_304 => 1,	# Generate 304: Not modified
     );
 
