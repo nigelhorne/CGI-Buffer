@@ -1056,19 +1056,21 @@ sub _my_age {
 	return $script_mtime;
 }
 
-sub _should_gzip {
-	if($compress_content && $send_body && ($ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'})) {
+sub _should_gzip
+{
+	if(defined($send_body) && ($send_body == 0)) {
+		return '';
+	}
+	if($compress_content && ($ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'})) {
+		if(scalar(@content_type)) {
+			if($content_type[0] ne 'text') {
+				return '';
+			}
+		}
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
-		foreach my $encoding ('x-gzip', 'gzip', 'br') {
-			$_ = $accept;
-			if(@content_type && $content_type[0]) {
-				if (m/$encoding/i && (lc($content_type[0]) eq 'text')) {
-					return $encoding;
-				}
-			} else {
-				if (m/$encoding/i) {
-					return $encoding;
-				}
+		foreach my $method(split(/,\s?/, $accept)) {
+			if(($method eq 'gzip') || ($method eq 'x-gzip') || ($method eq 'br')) {
+				return $method;
 			}
 		}
 	}

@@ -87,7 +87,7 @@ OUTPUT: {
 	ok(defined($body));
 	ok(length($body) eq $length);
 
-	$ENV{'HTTP_ACCEPT_ENCODING'} = 'gzip';
+	$ENV{'HTTP_ACCEPT_ENCODING'} = 'gzip, deflate, sdch, br';
 
 	$filename = tempdir() . 'test3';
 	open($tmp, '>', $filename);
@@ -119,7 +119,7 @@ OUTPUT: {
 
 	$ENV{'SERVER_PROTOCOL'} = 'HTTP/1.1';
 	delete($ENV{'HTTP_ACCEPT_ENCODING'});
-	$ENV{'HTTP_TE'} = 'br';
+	$ENV{'HTTP_TE'} = 'br,gzip';
 
 	$filename = tempdir() . 'test4';
 	open($tmp, '>', $filename);
