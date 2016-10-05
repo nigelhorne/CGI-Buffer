@@ -1217,7 +1217,7 @@ L<http://search.cpan.org/dist/CGI-Buffer/>
 
 =head1 ACKNOWLEDGEMENTS
 
-The inspiration and code for some if this is cgi_buffer by Mark
+The inspiration and code for some of this is cgi_buffer by Mark
 Nottingham: http://www.mnot.net/cgi_buffer.
 
 =head1 LICENSE AND COPYRIGHT
@@ -1231,7 +1231,7 @@ The licence for cgi_buffer is:
 
     This software is provided 'as is' without warranty of any kind."
 
-The rest of the program is Copyright 2011-2015 Nigel Horne,
+The rest of the program is Copyright 2011-2016 Nigel Horne,
 and is released under the following licence: GPL
 
 =cut

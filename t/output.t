@@ -30,11 +30,11 @@ OUTPUT: {
 
 	my $filename = tempdir() . 'test1';
 	open(my $tmp, '>', $filename);
-	print $tmp "use strict;\n";
-	print $tmp "use CGI::Buffer;\n";
-	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
-	print $tmp "print \"\\n\\n\";\n";
-	print $tmp "print \"<HTML><BODY>   Hello, world</BODY></HTML>\\n\";\n";
+	print $tmp "use strict;\n",
+		"use CGI::Buffer;\n",
+		"print \"Content-type: text/html; charset=ISO-8859-1\";\n",
+		"print \"\\n\\n\";\n",
+		"print \"<HTML><BODY>   Hello, world</BODY></HTML>\\n\";\n";
 
 	open(my $fout, '-|', "$^X -Iblib/lib " . $filename);
 
