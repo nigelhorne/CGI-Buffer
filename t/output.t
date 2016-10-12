@@ -18,6 +18,7 @@ use IO::Uncompress::Brotli;
 use DateTime;
 use Test::HTML::Lint;
 # use Test::NoWarnings;	# HTML::Clean has them
+eval 'use autodie qw(:all)';	# Test for open/close failures
 
 BEGIN {
 	use_ok('CGI::Buffer');
@@ -27,6 +28,9 @@ OUTPUT: {
 	delete $ENV{'HTTP_ACCEPT_ENCODING'};
 	delete $ENV{'HTTP_TE'};
 	delete $ENV{'SERVER_PROTOCOL'};
+	delete $ENV{'HTTP_RANGE'};
+
+	$ENV{'REQUEST_METHOD'} = 'GET';
 
 	my $filename = tempdir() . 'test1';
 	open(my $tmp, '>', $filename);
@@ -118,24 +122,27 @@ OUTPUT: {
 	ok(length($body) eq $length);
 
 	$ENV{'SERVER_PROTOCOL'} = 'HTTP/1.1';
-	delete($ENV{'HTTP_ACCEPT_ENCODING'});
+	$ENV{'HTTP_ACCEPT_ENCODING'} = undef;
+	# delete($ENV{'HTTP_ACCEPT_ENCODING'});
 	$ENV{'HTTP_TE'} = 'br,gzip';
 
 	$filename = tempdir() . 'test4';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
 	print $tmp "use CGI::Buffer {optimise_content => 0};\n",
-		"print \"Content-type: text/html; charset=ISO-8859-1\";\n",
-		"print \"\\n\\n\";\n";
+		"print \"Content-type: text/html; charset=ISO-8859-1\\n\";\n",
+		"print \"X-foo: \$ENV{HTTP_TE}\\n\";\n",
+		"print \"X-foo: \$ENV{HTTP_ACCEPT_ENCODING}\\n\";\n",
+		"print \"\\n\";\n";
 	# Put in a large body so that it gzips - small bodies won't
 	print $tmp "print \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.01 Transitional//EN\\\">\\n\";\n",
 		"print \"<HTML><HEAD><TITLE>Hello, world</TITLE></HEAD><BODY><P>The quick brown fox jumped over the lazy dog.</P></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fout, '-|', "$^X -Iblib/lib $filename");
 
 	$keep = $_;
 	undef $/;
@@ -167,7 +174,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test5';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -201,7 +208,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test6';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -233,7 +240,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test7';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -270,7 +277,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test8';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -308,7 +315,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test9';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -340,7 +347,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test10';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -372,7 +379,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test11';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -406,7 +413,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test12';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -474,7 +481,7 @@ OUTPUT: {
 	open($tmp, '>', $filename);
 	print $tmp "use CGI::Buffer;\n";
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -529,7 +536,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test14';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -565,7 +572,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test15';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
@@ -603,7 +610,7 @@ OUTPUT: {
 	$filename = tempdir() . 'test16';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
-		foreach (split(':', $ENV{'PERL5LIB'})) {
+		foreach (reverse split(':', $ENV{'PERL5LIB'})) {
 			print $tmp "use lib '$_';\n";
 		}
 	}
