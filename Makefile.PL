@@ -18,7 +18,6 @@ WriteMakefile(
 	'Test::TempDir::Tiny' => 0,
 	'DateTime' => 0,
 	# 'Test::Kwalitee' => 0,
-	'IO::Uncompress::Brotli' => 0,
     },
     PREREQ_PM => {
 	'Carp' => 0,

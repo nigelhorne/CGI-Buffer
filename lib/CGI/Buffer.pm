@@ -1124,7 +1124,7 @@ sub _compress {
 			require Encode;
 			$encode_loaded = 1;
 		}
-		my $nbody = bro(Encode::encode_utf8($body));
+		my $nbody = IO::Compress::Brotli::bro(Encode::encode_utf8($body));
 		if(length($nbody) < length($body)) {
 			$body = $nbody;
 			push @o, "Content-Encoding: $encoding";
