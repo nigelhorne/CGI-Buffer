@@ -315,6 +315,7 @@ END {
 					$body = substr($body, 0, $2);
 				}
 				$unzipped_body = $body;
+				$status = 206;
 			}
 		}
 		_compress({ encoding => $encoding });
@@ -556,9 +557,15 @@ END {
 		# CGI::Buffer
 		unshift @o, split(/\r\n/, $headers);
 		if($body && $send_body) {
-			unless(grep(/^Content-Length: /, @o)) {
+			unless(grep(/^Content-Length: \d/, @o)) {
 				push @o, "Content-Length: $body_length";
 			}
+		}
+		unless(grep(/^Status: \d/, @o)) {
+			require HTTP::Status;
+			HTTP::Status->import();
+
+			push @o, "Status: $status " . HTTP::Status::status_message($status);
 		}
 	} else {
 		push @o, "X-CGI-Buffer-$VERSION: No headers";
