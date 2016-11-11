@@ -84,6 +84,7 @@ our $cache_age;
 our $cache_key;
 our $info;
 our $logger;
+our $lingua;
 our $status;
 our $script_mtime;
 our $cobject;
@@ -721,9 +722,10 @@ sub _generate_key {
 		$info = CGI::Info->new({ cache => $cache });
 	}
 
-	# TODO: Use CGI::Lingua so that different languages are stored
-	#	in different caches
 	my $key = $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
+	if($lingua) {
+		$key .= '::' . $lingua->language();
+	}
 	if($ENV{'HTTP_COOKIE'}) {
 		# Different states of the client are stored in different caches
 		# Don't put different Google Analytics in different caches, and anyway they
@@ -783,6 +785,7 @@ Set various options and override default values.
 	logger => $logger,
 	lint_content => 0,	# Pass through HTML::Lint
 	generate_304 => 1,	# Generate 304: Not modified
+	lingua => CGI::Lingua->new(),
     );
 
 If no cache_key is given, one will be generated which may not be unique.
@@ -837,6 +840,9 @@ sub init {
 	}
 	if(defined($params{logger})) {
 		$logger = $params{logger};
+	}
+	if(defined($params{lingua})) {
+		$lingua = $params{lingua};
 	}
 	if(defined($params{generate_304})) {
 		$generate_304 = $params{generate_304};
