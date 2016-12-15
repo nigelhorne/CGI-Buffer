@@ -1072,9 +1072,6 @@ sub _my_age {
 
 sub _should_gzip
 {
-	if(defined($send_body) && ($send_body == 0)) {
-		return '';
-	}
 	if($compress_content && ($ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'})) {
 		if(scalar(@content_type)) {
 			if($content_type[0] ne 'text') {
