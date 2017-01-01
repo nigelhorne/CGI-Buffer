@@ -248,6 +248,7 @@ END {
 			}
 			my $lint = HTML::Lint->new();
 			$lint->parse($body);
+			$lint->eof();
 
 			if($lint->errors) {
 				$headers = 'Status: 500 Internal Server Error';
