@@ -246,9 +246,9 @@ OUTPUT: {
 	}
 	print $tmp "use CGI::Buffer;\n";
 	print $tmp "CGI::Buffer::set_options(optimise_content => 1, lint_content=> 1);\n";
-	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
-	print $tmp "print \"\\n\\n\";\n";
-	print $tmp "print \"<HTML><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click</A></BODY></HTML>\\n\";\n";
+	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n",
+		"print \"\\n\\n\";\n",
+		"print \"<HTML><HEAD><TITLE>test 7</TITLE></HEAD><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click</A></BODY></HTML>\\n\";\n";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
 
@@ -281,11 +281,11 @@ OUTPUT: {
 			print $tmp "use lib '$_';\n";
 		}
 	}
-	print $tmp "use CGI::Buffer;\n";
-	print $tmp "CGI::Buffer::set_options(optimise_content => 1, lint_content=> 1);\n";
-	print $tmp "print \"Content-type: text/html; charset=ISO-8859-1\";\n";
-	print $tmp "print \"\\n\\n\";\n";
-	print $tmp "print \"<HTML><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click </A> \\n\\t<a href=\\\"http://www.example.com/bar.htm\\\">Or here</a> </BODY></HTML>\\n\";\n";
+	print $tmp "use CGI::Buffer;\n",
+		"CGI::Buffer::set_options(optimise_content => 1, lint_content=> 1);\n",
+		"print \"Content-type: text/html; charset=ISO-8859-1\";\n",
+		"print \"\\n\\n\";\n",
+		"print \"<HTML><HEAD><TITLE>test 8</TITLE></HEAD><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click </A> \\n\\t<a href=\\\"http://www.example.com/bar.htm\\\">Or here</a> </BODY></HTML>\\n\";\n";
 
 	open($fout, '-|', "$^X -Iblib/lib " . $filename);
 
