@@ -1,23 +1,22 @@
 [![Linux Build Status](https://travis-ci.org/nigelhorne/CGI-Buffer.svg?branch=master)](https://travis-ci.org/nigelhorne/CGI-Buffer)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/2uhepmj5sd1nspjg?svg=true)](https://ci.appveyor.com/project/nigelhorne/cgi-buffer)
 [![Dependency Status](https://dependencyci.com/github/nigelhorne/CGI-Buffer/badge)](https://dependencyci.com/github/nigelhorne/CGI-Buffer)
+[![Coverage Status](https://coveralls.io/repos/github/nigelhorne/CGI-Buffer/badge.svg?branch=master)](https://coveralls.io/github/nigelhorne/CGI-Buffer?branch=master)
 
-
-CGI-Buffer
-==========
+# CGI::Buffer
 
 Verify, Cache and Optimise CGI Output
 
 # VERSION
 
-Version 0.77
+Version 0.79
 
 # SYNOPSIS
 
 CGI::Buffer verifies the HTML that you produce by passing it through
 `HTML::Lint`.
 
-CGI::Buffer optimises CGI programs by reducing, filtering and compressing
+CGI::Buffer optimises FCGI programs by reducing, filtering and compressing
 output to speed up the transmission and by nearly seamlessly making use of
 client and server caches.
 
@@ -79,6 +78,7 @@ Set various options and override default values.
         logger => $logger,
         lint_content => 0,      # Pass through HTML::Lint
         generate_304 => 1,      # Generate 304: Not modified
+        lingua => CGI::Lingua->new(),
     );
 
 If no cache\_key is given, one will be generated which may not be unique.
@@ -247,5 +247,5 @@ The licence for cgi\_buffer is:
 
     This software is provided 'as is' without warranty of any kind."
 
-The rest of the program is Copyright 2011-2016 Nigel Horne,
+The rest of the program is Copyright 2011-2017 Nigel Horne,
 and is released under the following licence: GPL

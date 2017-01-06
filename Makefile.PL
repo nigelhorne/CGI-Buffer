@@ -48,6 +48,10 @@ WriteMakefile(
 			url => 'git://github.com/nigelhorne/CGI-Buffer.git',
 			web => 'https://github.com/nigelhorne/CGI-Buffer',
     		},
+		bugtracker => {
+			web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=CGI-Buffer',
+			mailto => 'bug-CGI-Buffer@rt.cpan.org'
+		}
 	},
     },
     MIN_PERL_VERSION	=> '5.6.2'	# Probably would work, but never tested on earlier versions than this
