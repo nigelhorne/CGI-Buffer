@@ -539,7 +539,7 @@ END {
 			if($logger) {
 				$logger->debug("Set ETag to $etag");
 			}
-		} elsif($logger && (($status == 200) || $status == 304) && !is_cached()) {
+		} elsif($logger && (($status == 200) || $status == 304) && $body && !is_cached()) {
 			$logger->warn("BUG: ETag not generated, status $status");
 		}
 	}
