@@ -161,7 +161,7 @@ OUTPUT: {
 
 	ok(defined($body));
 	ok(length($body) eq $length);
-	$body = unbro($body);
+	$body = unbro($body, 1024);
 	ok(defined($body));
 	ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
 	html_ok($body, 'HTML:Lint shows no errors');
