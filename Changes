@@ -1,6 +1,6 @@
 Revision history for CGI-Buffer
 
-0.80:
+0.80	Mon Sep 25 13:03:24 EDT 2017
 	Remove false positive bug reports
 	Work with the latest IO::Compress::Brotli
 
