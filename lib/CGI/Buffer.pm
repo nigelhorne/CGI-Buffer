@@ -263,10 +263,12 @@ END {
 		}
 	}
 
-	$status = 200;
-
 	if(defined($headers) && ($headers =~ /^Status: (\d+)/m)) {
 		$status = $1;
+	} elsif($info) {
+		$status = $info->status();
+	} else {
+		$status = 200;
 	}
 
 	if($logger) {
