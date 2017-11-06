@@ -40,11 +40,11 @@ OUTPUT: {
 		"print \"\\n\\n\";\n",
 		"print \"<HTML><BODY>   Hello, world</BODY></HTML>\\n\";\n";
 
-	open(my $fout, '-|', "$^X -Iblib/lib " . $filename);
+	open(my $fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	my $keep = $_;
 	undef $/;
-	my $output = <$fout>;
+	my $output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -69,11 +69,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML>\\n<BODY>\\n\\t    Hello, world\\n  </BODY>\\n</HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -100,11 +100,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><HEAD>Test</HEAD><BODY><P>Hello, world></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -142,11 +142,11 @@ OUTPUT: {
 	print $tmp "print \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.01 Transitional//EN\\\">\\n\";\n",
 		"print \"<HTML><HEAD><TITLE>Hello, world</TITLE></HEAD><BODY><P>The quick brown fox jumped over the lazy dog.</P></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib $filename");
+	open($fin, '-|', "$^X -Iblib/lib $filename");
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -185,11 +185,11 @@ OUTPUT: {
 		"print \"\\n\\n\";\n",
 		"print \"<HTML><BODY><A HREF=\\\"http://www.example.com\\\">Click</A>\n<script>\nalert(foo);\n</script></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -219,11 +219,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><A HREF= \\\"http://www.example.com/foo.htm\\\">Click</A></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -251,11 +251,11 @@ OUTPUT: {
 		"print \"\\n\\n\";\n",
 		"print \"<HTML><HEAD><TITLE>test 7</TITLE></HEAD><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click</A></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -288,11 +288,11 @@ OUTPUT: {
 		"print \"\\n\\n\";\n",
 		"print \"<HTML><HEAD><TITLE>test 8</TITLE></HEAD><BODY><A HREF= \n\\\"http://www.example.com/foo.htm\\\">Click </A> \\n\\t<a href=\\\"http://www.example.com/bar.htm\\\">Or here</a> </BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -326,11 +326,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><A HREF=\\\"http://www.example.com/foo.htm\\\">Click</a> <hr> A Line \n<HR>\r\n Foo</BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -357,11 +357,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY>\n<p><em>The Brass Band Portal</em> is visited some 500 times</BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -390,11 +390,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><A HREF=\\\"http://www.example.com/foo.htm\\\">Click</BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -424,11 +424,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	ok($output =~ /<TD>foo<\/TD><TD>bar<\/TD>/mi);
@@ -447,11 +447,11 @@ OUTPUT: {
 	#..........................................
 	$ENV{'HTTP_IF_NONE_MATCH'} = "\"$etag\"";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
@@ -460,11 +460,11 @@ OUTPUT: {
 
 	$ENV{'REQUEST_METHOD'} = 'HEAD';
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -491,11 +491,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>\\t  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -519,11 +519,11 @@ OUTPUT: {
 	#..........................................
 	$ENV{'HTTP_IF_NONE_MATCH'} = $etag;
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	ok($output !~ /^Status: 304 Not Modified/mi);
@@ -546,11 +546,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>  <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -582,11 +582,11 @@ OUTPUT: {
 	print $tmp "print \"\\n\\n\";\n";
 	print $tmp "print \"<HTML><BODY><TABLE><TR><TD>foo</TD>   <TD>bar</TD></TR></TABLE></BODY></HTML>\\n\";\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
@@ -618,14 +618,15 @@ OUTPUT: {
 	print $tmp "use strict;\n";
 	print $tmp "use CGI::Buffer;\n";
 
-	open($fout, '-|', "$^X -Iblib/lib " . $filename);
+	open($fin, '-|', "$^X -Iblib/lib " . $filename);
 
 	$keep = $_;
 	undef $/;
-	$output = <$fout>;
+	$output = <$fin>;
 	$/ = $keep;
 
 	close $tmp;
+	close $fin;
 
 	ok($output eq '');
 }

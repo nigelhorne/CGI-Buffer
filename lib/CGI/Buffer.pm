@@ -490,7 +490,7 @@ END {
 					}
 				}
 				if($generate_etag && defined($etag)) {
-					$cache_hash->{'etag'} = $etag
+					$cache_hash->{'etag'} = $etag;
 				}
 				# TODO: Support the Expires header
 				# if($headers !~ /^Expires: /m))) {
@@ -561,11 +561,11 @@ END {
 		# CGI::Buffer
 		unshift @o, split(/\r\n/, $headers);
 		if($body && $send_body) {
-			unless(grep(/^Content-Length: \d/, @o)) {
+			if(scalar(grep(/^Content-Length: \d/, @o)) == 0) {
 				push @o, "Content-Length: $body_length";
 			}
 		}
-		unless(grep(/^Status: \d/, @o)) {
+		if(scalar(grep(/^Status: \d/, @o)) == 0) {
 			require HTTP::Status;
 			HTTP::Status->import();
 
