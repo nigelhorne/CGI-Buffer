@@ -713,6 +713,7 @@ sub _optimise_content {
 	$body =~ s/<\/li>\s+<li>/<\/li><li>/gis;
 	$body =~ s/<\/li>\s+<\/ul>/<\/li><\/ul>/gis;
 	$body =~ s/<ul>\s+<li>/<ul><li>/gis;
+	$body =~ s/\s+<\/li>/<\/li>/gis;
 	$body =~ s/\<\/option\>\s+\<option/\<\/option\>\<option/gis;
 	$body =~ s/<title>\s*(.+?)\s*<\/title>/<title>$1<\/title>/is;
 }
