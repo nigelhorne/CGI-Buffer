@@ -1,5 +1,6 @@
 package CGI::Buffer;
 
+use 5.14.0;	# For IO::Compress::Brotli
 use strict;
 use warnings;
 
