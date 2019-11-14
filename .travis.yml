@@ -9,8 +9,8 @@ perl:
   - "5.24"
   - "5.22"
   - "5.20"
-  - "5.16"
-  - "5.14"
+  # - "5.16"
+  # - "5.14"
   - "5.24-shrplib"
   - "5.22-shrplib"
   - "5.20-shrplib"
@@ -37,7 +37,7 @@ before_install:
   - cd $BUILD_DIR
 
 install:
-  - sudo apt-get update -q
+  # - sudo apt-get update -q
   - cpan-install --deps
   - cpan-install --coverage
   - cpanm -n Devel::Cover::Report::Coveralls Test::Script Test::Pod::Spelling::CommonMistakes Test::Portability::Files Test::Taint Test::Carp DBD::SQLite DBI CHI Test::Carp Test::Without::Module
