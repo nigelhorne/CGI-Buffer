@@ -607,7 +607,7 @@ END {
 				open(my $fout, '>>', '/tmp/NJH');
 				print $fout "$widemess:\n";
 				print $fout $mess;
-				print $fout 'x' x 40 . "\n";
+				print $fout 'x' x 40, "\n";
 				close $fout;
 			}
 		}
