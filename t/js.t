@@ -12,6 +12,7 @@ use warnings;
 use Test::Most tests => 9;
 use Test::TempDir::Tiny;
 # use Test::NoWarnings;	# HTML::Clean has them
+eval 'use autodie qw(:all)';	# Test for open/close failures
 
 BEGIN {
 	use_ok('CGI::Buffer');
@@ -72,7 +73,7 @@ EOF
 	my ($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 	ok(defined($headers));
 	ok(defined($body));
-	ok(length($body) eq $length);
+	is(length($body), $length, 'Check length of body');
 
 	ok($output =~ /document\.write\("a"\+"b"\);/m);
 	ok($output =~ /document\.write\("foo"\+"bar"\);/m);
