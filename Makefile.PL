@@ -1,6 +1,13 @@
 use strict;
 use warnings;
 use ExtUtils::MakeMaker 6.64;	# 6.64 for TEST_REQUIRES
+use File::Spec 3.4;
+
+my $tmpdir = File::Spec->tmpdir();
+if(!-w $tmpdir) {
+	print STDERR "NA: Your temporary directory '$tmpdir' isn't writable, fix your configuration and try again";
+	exit(0);
+}
 
 WriteMakefile(
 	NAME	=> 'CGI::Buffer',

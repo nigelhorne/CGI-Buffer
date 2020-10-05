@@ -26,7 +26,7 @@ OUTPUT: {
 	use CGI::Buffer;
 
 	CGI::Buffer::set_options(optimise_content => 2);
-	
+
 	print "Content-type: text/html; charset=ISO=8859-1";
 	print "\n\n";
 
