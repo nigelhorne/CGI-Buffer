@@ -56,9 +56,10 @@ WriteMakefile(
 				type => 'git',
 				url => 'git://github.com/nigelhorne/CGI-Buffer.git',
 				web => 'https://github.com/nigelhorne/CGI-Buffer',
-			},
-			bugtracker => {
-				web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=CGI-Buffer',
+			}, bugtracker => {
+				# web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=CGI-Buffer',
+				web => 'https://github.com/nigelhorne/CGI-Buffer/issues',
+				url => 'https://github.com/nigelhorne/CGI-Buffer/issues',
 				mailto => 'bug-CGI-Buffer@rt.cpan.org'
 			}
 		},

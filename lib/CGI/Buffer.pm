@@ -1213,24 +1213,31 @@ You can also look for information at:
 
 =over 4
 
+=item * MetaCPAN
+
+L<https://metacpan.org/release/CGI-Buffer>
+
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=CGI-Buffer>
+L<https://rt.cpan.org/NoAuth/Bugs.html?Dist=CGI-Buffer>
 
-=item * AnnoCPAN: Annotated CPAN documentation
+=item * CPANTS
 
-L<http://annocpan.org/dist/CGI-Buffer>
+L<http://cpants.cpanauthors.org/dist/CGI-Buffer>
+
+=item * CPAN Testers' Matrix
+
+L<http://matrix.cpantesters.org/?dist=CGI-Buffer>
 
 =item * CPAN Ratings
 
 L<http://cpanratings.perl.org/d/CGI-Buffer>
 
-=item * Search CPAN
+=item * CPAN Testers Dependencies
 
-L<http://search.cpan.org/dist/CGI-Buffer/>
+L<http://deps.cpantesters.org/?module=CGI::Buffer>
 
 =back
-
 
 =head1 ACKNOWLEDGEMENTS
 

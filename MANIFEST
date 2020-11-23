@@ -4,8 +4,8 @@ lib/CGI/Buffer.pm
 LICENSE
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 META.json			Module JSON meta-data (added by MakeMaker)
-META.yml			Module meta-data (added by MakeMaker)
 README
 README.md
 src/testit
