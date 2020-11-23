@@ -1,7 +1,10 @@
-[![Linux Build Status](https://travis-ci.org/nigelhorne/CGI-Buffer.svg?branch=master)](https://travis-ci.org/nigelhorne/CGI-Buffer)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/2uhepmj5sd1nspjg?svg=true)](https://ci.appveyor.com/project/nigelhorne/cgi-buffer)
-[![Dependency Status](https://dependencyci.com/github/nigelhorne/CGI-Buffer/badge)](https://dependencyci.com/github/nigelhorne/CGI-Buffer)
+[![Actions Status](https://github.com/nigelhorne/CGI-Buffer/workflows/.github/workflows/all.yml/badge.svg)](https://github.com/nigelhorne/CGI-Buffer/actions)
+[![Travis Status](https://travis-ci.org/nigelhorne/CGI-Buffer.svg?branch=master)](https://travis-ci.org/nigelhorne/CGI-Buffer)
+[![Appveyor status](https://ci.appveyor.com/api/projects/status/2uhepmj5sd1nspjg?svg=true)](https://ci.appveyor.com/project/nigelhorne/cgi-buffer)
 [![Coverage Status](https://coveralls.io/repos/github/nigelhorne/CGI-Buffer/badge.svg?branch=master)](https://coveralls.io/github/nigelhorne/CGI-Buffer?branch=master)
+[![CPAN](https://img.shields.io/cpan/v/CGI-Buffer.svg)](http://search.cpan.org/~nhorne/CGI-Buffer/)
+[![Kritika Analysis Status](https://kritika.io/users/nigelhorne/repos/5642353356298438/heads/master/status.svg)](https://kritika.io/users/nigelhorne/repos/5642353356298438/heads/master/)
+[![Kwalitee](https://cpants.cpanauthors.org/dist/CGI-Buffer.png)](http://cpants.cpanauthors.org/dist/CGI-Buffer)
 
 # CGI::Buffer
 
