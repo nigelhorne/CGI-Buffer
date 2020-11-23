@@ -58,7 +58,7 @@ EOF
 	open(my $tmp, '>', $filename);
 	print $tmp $input;
 
-	open(my $fout, '-|', "$^X -Iblib/lib " . $filename);
+	open(my $fout, '-|', "$^X -Iblib/lib $filename");
 
 	my $keep = $_;
 	undef $/;
