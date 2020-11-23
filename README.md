@@ -19,7 +19,7 @@ Version 0.82
 CGI::Buffer verifies the HTML that you produce by passing it through
 `HTML::Lint`.
 
-CGI::Buffer optimises FCGI programs by reducing, filtering and compressing
+CGI::Buffer optimises CGI programs by reducing, filtering and compressing
 output to speed up the transmission and by nearly seamlessly making use of
 client and server caches.
 
