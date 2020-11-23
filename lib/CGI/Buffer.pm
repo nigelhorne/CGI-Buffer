@@ -28,7 +28,7 @@ our $VERSION = '0.82';
 CGI::Buffer verifies the HTML that you produce by passing it through
 C<HTML::Lint>.
 
-CGI::Buffer optimises FCGI programs by reducing, filtering and compressing
+CGI::Buffer optimises CGI programs by reducing, filtering and compressing
 output to speed up the transmission and by nearly seamlessly making use of
 client and server caches.
 
@@ -1201,7 +1201,7 @@ your bug as I make changes.
 
 =head1 SEE ALSO
 
-HTML::Packer, HTML::Lint
+L<HTML::Packer>, L<HTML::Lint>
 
 =head1 SUPPORT
 
