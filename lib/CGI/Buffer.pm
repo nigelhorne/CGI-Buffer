@@ -350,7 +350,7 @@ END {
 						push @o, 'X-Cache-Lookup: HIT';
 					}
 				} else {
-					carp "Error retrieving data for key $key";
+					carp(__PACKAGE__, ": error retrieving data for key $key");
 				}
 			}
 
