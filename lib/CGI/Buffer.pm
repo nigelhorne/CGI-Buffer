@@ -533,8 +533,10 @@ END {
 	} elsif($info) {
 		my $host_name = $info->host_name();
 		push @o, ("X-Cache: MISS from $host_name", "X-Cache-Lookup: MISS from $host_name");
-		if($generate_last_modified && (my $age = _my_age())) {
-			push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
+		if($generate_last_modified) {
+			if(my $age = _my_age()) {
+				push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
+			}
 		}
 	} else {
 		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
