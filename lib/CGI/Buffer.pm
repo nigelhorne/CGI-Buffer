@@ -533,16 +533,19 @@ END {
 	} elsif($info) {
 		my $host_name = $info->host_name();
 		push @o, ("X-Cache: MISS from $host_name", "X-Cache-Lookup: MISS from $host_name");
-		if($generate_last_modified) {
-			if(my $age = _my_age()) {
-				push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
+		my $path = $info->script_path();
+		if($path =~ /.html?$/) {	# Static file
+			if($generate_last_modified) {
+				if(my $age = _my_age()) {
+					push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
+				}
 			}
-		}
-		if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && $generate_304) {
-			_check_modified_since({
-				since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
-				modified => _my_age()
-			});
+			if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && $generate_304) {
+				_check_modified_since({
+					since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
+					modified => _my_age()
+				});
+			}
 		}
 	} else {
 		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
