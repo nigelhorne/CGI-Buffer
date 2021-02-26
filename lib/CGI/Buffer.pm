@@ -538,6 +538,12 @@ END {
 				push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
 			}
 		}
+		if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && $generate_304) {
+			_check_modified_since({
+				since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
+				modified => _my_age()
+			});
+		}
 	} else {
 		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
 	}
