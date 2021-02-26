@@ -533,7 +533,7 @@ OUTPUT: {
 	delete $ENV{'HTTP_IF_NONE_MATCH'};
 	$ENV{'HTTP_IF_MODIFIED_SINCE'} = DateTime->now();
 
-	$filename = tempdir() . 'test14.htm';
+	$filename = tempdir() . 'test14';
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (reverse split(/:/, $ENV{'PERL5LIB'})) {
