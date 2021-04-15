@@ -58,25 +58,28 @@ EOF
 	open(my $tmp, '>', $filename);
 	print $tmp $input;
 
-	open(my $fout, '-|', "$^X -Iblib/lib $filename");
+	if(open(my $fout, '-|', "$^X -Iblib/lib $filename")) {
+		my $keep = $_;
+		undef $/;
+		my $output = <$fout>;
+		$/ = $keep;
 
-	my $keep = $_;
-	undef $/;
-	my $output = <$fout>;
-	$/ = $keep;
+		close $tmp;
 
-	close $tmp;
+		ok($output =~ /^Content-Length:\s+(\d+)+/m);
+		my $length = $1;
 
-	ok($output =~ /^Content-Length:\s+(\d+)+/m);
-	my $length = $1;
+		my ($headers, $body) = split /\r?\n\r?\n/, $output, 2;
+		ok(defined($headers));
+		ok(defined($body));
+		is(length($body), $length, 'Check length of body');
 
-	my ($headers, $body) = split /\r?\n\r?\n/, $output, 2;
-	ok(defined($headers));
-	ok(defined($body));
-	is(length($body), $length, 'Check length of body');
-
-	ok($output =~ /document\.write\("a"\+"b"\);/m);
-	ok($output =~ /document\.write\("foo"\+"bar"\);/m);
-	ok($output !~ /document\.write\("1"\+"2"\);/m);
-	ok($output !~ /document\.write\("fred"\+"wilma"\);/m);
+		ok($output =~ /document\.write\("a"\+"b"\);/m);
+		ok($output =~ /document\.write\("foo"\+"bar"\);/m);
+		ok($output !~ /document\.write\("1"\+"2"\);/m);
+		ok($output !~ /document\.write\("fred"\+"wilma"\);/m);
+	} else {
+		diag "$filename: $!";
+		print "Bail out!";
+	}
 }
