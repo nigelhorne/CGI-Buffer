@@ -280,7 +280,7 @@ END {
 	# includes the mtime field which changes thus causing a different
 	# Etag to be generated
 	if($ENV{'SERVER_PROTOCOL'} &&
-	  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') &&
+	  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
 	  $generate_etag && defined($body)) {
 		# encode to avoid "Wide character in subroutine entry"
 		require Encode;
@@ -357,7 +357,7 @@ END {
 			# Nothing has been output yet, so we can check if it's
 			# OK to send 304 if possible
 			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
-			  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') &&
+			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
 			  $generate_304 && ($status == 200)) {
 				if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
 					_check_modified_since({
@@ -388,7 +388,7 @@ END {
 				}
 			}
 			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
-			  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') &&
+			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
 			  ($status == 200)) {
 				if($ENV{'HTTP_IF_NONE_MATCH'}) {
 					if(!defined($etag)) {
