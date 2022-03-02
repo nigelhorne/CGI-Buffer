@@ -100,7 +100,7 @@ BEGIN {
 
 	if((!defined($ENV{'SERVER_PROTOCOL'})) ||
 	  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.0')) {
-	  	$generate_etag = 0;
+		$generate_etag = 0;
 	}
 }
 
