@@ -6,6 +6,7 @@
 # TODO: check optimise_content and gzips do the *right* thing
 # TODO: check ETags are correct
 # TODO: Write a test to check that 304 is sent when a cached object
+# TODO:	Consider Test::File::Contents
 
 use strict;
 use warnings;
