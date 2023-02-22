@@ -5,7 +5,6 @@ LICENSE
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
-META.json			Module JSON meta-data (added by MakeMaker)
 README
 README.md
 src/testit
