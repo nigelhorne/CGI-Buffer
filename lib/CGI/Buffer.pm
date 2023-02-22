@@ -123,7 +123,7 @@ END {
 		# This will cause everything to get flushed and prevent
 		# outputs to the logger.  We need to do that now since
 		# if we leave it to Perl to delete later we may get
-		# a message that Log4Perl::init() hasn't been called
+		# a message that Log4perl::init() hasn't been called
 		$logger = undef;
 	}
 	select($CGI::Buffer::old_buf);
@@ -1207,7 +1207,7 @@ CGI::Buffer is not compatible with FastCGI.
 
 I advise adding CGI::Buffer as the last use statement so that it is
 cleared up first.  In particular it should be loaded after
-L<Log::Log4Perl>, if you're using that, so that any messages it
+L<Log::Log4perl>, if you're using that, so that any messages it
 produces are printed after the HTTP headers have been sent by
 CGI::Buffer;
 
