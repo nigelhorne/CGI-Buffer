@@ -357,7 +357,7 @@ END {
 				} elsif($logger) {
 					$logger->warn("Error retrieving data for key $key");
 				} else {
-					carp( __PACKAGE__, ": error retrieving data for key $key");
+					carp(__PACKAGE__, ": error retrieving data for key $key");
 				}
 			}
 
