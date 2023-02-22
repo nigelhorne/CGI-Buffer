@@ -258,7 +258,11 @@ END {
 				$body = '';
 				foreach my $error ($lint->errors) {
 					my $errtext = $error->where() . ': ' . $error->errtext() . "\n";
-					warn($errtext);
+					if($logger) {
+						$logger->warn($errtext);
+					} else {
+						warn($errtext);
+					}
 					$body .= $errtext;
 				}
 			}
@@ -350,8 +354,10 @@ END {
 						push @o, 'X-Cache: HIT';
 						push @o, 'X-Cache-Lookup: HIT';
 					}
+				} elsif($logger) {
+					$logger->warn("Error retrieving data for key $key");
 				} else {
-					carp(__PACKAGE__, ": error retrieving data for key $key");
+					carp( __PACKAGE__, ": error retrieving data for key $key");
 				}
 			}
 
@@ -367,7 +373,7 @@ END {
 					});
 				}
 			}
-			if($send_body && ($status == 200)) {
+			if($send_body && ($status == 200) && defined($cache_hash)) {
 				$body = $cache_hash->{'body'};
 				if(!defined($body)) {
 					# Panic
@@ -380,10 +386,11 @@ END {
 					$cache->remove($key);
 					if($logger) {
 						$logger->error("Can't retrieve body for key $key");
+						$logger->warn($body);
 					} else {
 						carp "Can't retrieve body for key $key";
+						warn($body);
 					}
-					warn($body);
 					$send_body = 0;
 					$status = 500;
 				}
