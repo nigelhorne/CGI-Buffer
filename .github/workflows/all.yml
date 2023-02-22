@@ -20,8 +20,7 @@ jobs:
           - macos-latest
           - ubuntu-22.04
           - ubuntu-20.04
-#         - windows-2022
-#         - windows-2019
+#         - windows-latest
         perl: ['5.36', '5.34', '5.32', '5.30', '5.28', '5.22']
     name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     steps:
@@ -35,6 +34,12 @@ jobs:
         run: |
           cpanm -iqn File::Spec ExtUtils::MakeMaker Test::Most
           cpanm -iqn --installdeps --notest .
+      - name: Install Windows Dependencies
+        if: matrix.os == 'windows-latest'
+        run: cpanm -iqn Win32::Process IPC::System::Simple
+      - name: Install non Windows Dependencies
+        if: matrix.os != 'windows-latest'
+        run: cpanm -iqn IO::Compress::Brotli
       - name: Run Tests
         run: prove -l -b t
         env:
