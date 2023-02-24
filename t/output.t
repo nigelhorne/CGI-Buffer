@@ -556,13 +556,13 @@ OUTPUT: {
 	close $tmp;
 
 	ok($output !~ /ETag: "([A-Za-z0-F0-f]{32})"/m);
-	ok($output =~ /^Status: 304 Not Modified/mi);
+	like($output, qr/^Status: 304 Not Modified/mi, '304 not modified');
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
 
-	ok($headers !~ /^Content-Length:/m);
+	unlike($headers, qr/^Content-Length:/m, '304 does not contain content-length');
 
-	ok(length($body) == 0);
+	cmp_ok(length($body), '==', 0, '304 has empty body');
 
 	#......................................
 	$ENV{'HTTP_IF_MODIFIED_SINCE'} = 'This is an invalid date';
