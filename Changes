@@ -1,6 +1,6 @@
 Revision history for CGI-Buffer
 
-0.83
+0.83	Fri Feb 24 15:45:21 EST 2023
 	Bump minimum version because of IO::Compress::Brotli failures
 	Fix problem where Last-Modified header not set when no cache
 	Generate 304 on non-cached files
