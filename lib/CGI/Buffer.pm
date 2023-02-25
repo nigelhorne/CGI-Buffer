@@ -422,7 +422,7 @@ END {
 			if($status == 200) {
 				$encoding = _should_gzip();
 				if($send_body) {
-					if($generate_etag && !defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
+					if($generate_etag && !defined($etag) && defined($body) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
 						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
 					}
 					_compress({ encoding => $encoding });
