@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.84
+	Fix uninitialisd variable
+
 0.83	Fri Feb 24 15:45:21 EST 2023
 	Bump minimum version because of IO::Compress::Brotli failures
 	Fix problem where Last-Modified header not set when no cache

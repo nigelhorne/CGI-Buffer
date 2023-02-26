@@ -1130,6 +1130,8 @@ sub _set_content_type
 sub _compress {
 	my %params = (ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
 
+	return unless(defined($body));
+
 	my $encoding = $params{encoding};
 
 	if((length($encoding) == 0) || (length($body) < MIN_GZIP_LEN)) {
