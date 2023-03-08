@@ -615,7 +615,7 @@ END {
 					$logger->trace($call_details[1] . ':' . $call_details[2] . ' in function ' . $call_details[3]);
 				}
 			}
-			CORE::warn(@_);     # call the builtin warn as usual
+			CORE::warn(@_);	# call the builtin warn as usual
 		};
 
 		if(scalar @o) {
@@ -698,7 +698,7 @@ sub _optimise_content {
 	# $body =~ s/\<div\>\s+/\<div\>/gis;	# Remove spaces after <div>
 	$body =~ s/(<div>\s+|\s+<div>)/<div>/gis;
 	$body =~ s/\s+<\/div\>/\<\/div\>/gis;	# Remove spaces before </div>
-	$body =~ s/\s+\<p\>|\<p\>\s+/\<p\>/im;  # TODO <p class=
+	$body =~ s/\s+\<p\>|\<p\>\s+/\<p\>/im;	# TODO <p class=
 	$body =~ s/\s+\<\/p\>|\<\/p\>\s+/\<\/p\>/gis;
 	$body =~ s/<html>\s+<head>/<html><head>/is;
 	$body =~ s/\s*<\/head>\s+<body>\s*/<\/head><body>/is;
