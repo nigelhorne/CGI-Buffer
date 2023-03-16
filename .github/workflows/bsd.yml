@@ -18,10 +18,10 @@ jobs:
         os:
           - name: freebsd
             version: '13.0'
-            pkginstall: pkg install -y p5-ExtUtils-MakeMaker p5-IO-Compress-Brotli
+            pkginstall: pkg install -y p5-ExtUtils-MakeMaker p5-IO-Compress-Brotli p5-Digest-MD5 p5-HTML-Packer p5-IO-String p5-JavaScript-Packer p5-HTTP-Date p5-HTML-Lint
           - name: openbsd
             version: '7.1'
-            pkginstall: pkg_add p5-List-MoreUtils brotli
+            pkginstall: pkg_add p5-List-MoreUtils brotli-debug p5-HTTP-Date
 
     steps:
       - uses: actions/checkout@main
