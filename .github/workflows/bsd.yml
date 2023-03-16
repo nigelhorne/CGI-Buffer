@@ -21,7 +21,7 @@ jobs:
             pkginstall: pkg install -y p5-ExtUtils-MakeMaker p5-IO-Compress-Brotli p5-Digest-MD5 p5-HTML-Packer p5-IO-String p5-JavaScript-Packer p5-HTTP-Date p5-HTML-Lint
           - name: openbsd
             version: '7.1'
-            pkginstall: pkg_add p5-List-MoreUtils brotli-debug p5-HTTP-Date
+            pkginstall: pkg_add p5-List-MoreUtils brotli p5-HTTP-Date
 
     steps:
       - uses: actions/checkout@main
@@ -36,7 +36,7 @@ jobs:
           run: |
             sudo hostname example.com
             sudo ${{ matrix.os.pkginstall }}
-            curl -L https://cpanmin.us | sudo perl - --notest --installdeps --with-configure --with-develop .
+            curl -L https://cpanmin.us | sudo perl - --verbose --notest --installdeps --with-configure --with-develop .
             sudo chown -R runner:runner .
             perl Makefile.PL
             make
