@@ -612,7 +612,6 @@ OUTPUT: {
 	delete $ENV{'HTTP_IF_MODIFIED_SINCE'};
 
 	$filename = tempdir() . 'test16';
-	diag $filename;
 	open($tmp, '>', $filename);
 	if($ENV{'PERL5LIB'}) {
 		foreach (reverse split(/:/, $ENV{'PERL5LIB'})) {
