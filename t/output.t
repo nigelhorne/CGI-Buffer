@@ -631,5 +631,5 @@ OUTPUT: {
 	close $tmp;
 	close $fin;
 
-	ok($output eq '');
+	ok($output eq "Status: 200 OK\n\n");
 }

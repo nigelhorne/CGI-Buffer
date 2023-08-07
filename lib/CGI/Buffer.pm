@@ -136,6 +136,17 @@ END {
 		if($logger) {
 			$logger->debug('There was no output');
 		}
+		if(!defined($headers)) {
+			require HTTP::Status;
+			HTTP::Status->import();
+
+			if(!defined($status)) {
+				$status = 200;
+			}
+			print "Status: $status ",
+				HTTP::Status::status_message($status),
+				"\n\n";
+		}
 		return;
 	}
 	if($ENV{'REQUEST_METHOD'} && ($ENV{'REQUEST_METHOD'} eq 'HEAD')) {
