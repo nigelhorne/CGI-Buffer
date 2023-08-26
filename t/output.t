@@ -176,6 +176,8 @@ OUTPUT: {
                 }
         } else {
                 ok($headers =~ /^Content-Encoding: br/m);
+		require IO::Compress::Brotli;
+		IO::Compress::Brotli->import();
 
                 $body = IO::Compress::Brotli::unbro($body, 1024);
 		ok(defined($body));
