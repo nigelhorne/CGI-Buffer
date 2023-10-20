@@ -1261,10 +1261,6 @@ L<http://cpants.cpanauthors.org/dist/CGI-Buffer>
 
 L<http://matrix.cpantesters.org/?dist=CGI-Buffer>
 
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/CGI-Buffer>
-
 =item * CPAN Testers Dependencies
 
 L<http://deps.cpantesters.org/?module=CGI::Buffer>

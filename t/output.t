@@ -168,7 +168,7 @@ OUTPUT: {
                 TODO: {
                         local $TODO = "IO::Compress::Brotli doesn't support Windows or OpenBSD";
                         ok($headers =~ /^Content-Encoding: br/m);
-        
+
                         # $body = IO::Compress::Brotli::unbro($body, 1024);
 			ok(defined($body));
                         ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
