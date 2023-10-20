@@ -1,7 +1,7 @@
 ---
 # See https://github.com/actions/virtual-environments
 
-name: Test Code on Windows
+name: Test Code on Windows using Strawberry Perl
 on:
   push:
     branches:
@@ -18,7 +18,7 @@ jobs:
         os:
           - windows-latest
           - windows-2019
-        perl: ['5.38', '5.36', '5.34', '5.32', '5.30', '5.28']
+        perl: ['5.32', '5.30', '5.28']
     name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -27,13 +27,12 @@ jobs:
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
+          distribution: strawberry
       - run: perl -V
       - name: Install Dependencies
         run: |
           cpanm -iqn --skip-satisfied File::Spec ExtUtils::MakeMaker Test::Harness
-          cpanm -iqn --skip-satisfied Test::Carp Test::Compile
           cpanm -iqn --skip-satisfied --installdeps --notest .
-          find . -name build.log | xargs cat
       - name: Run Tests
         run: prove -lv t
         env:

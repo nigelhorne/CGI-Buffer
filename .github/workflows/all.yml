@@ -1,4 +1,7 @@
 ---
+# See https://github.com/actions/virtual-environments
+# https://github.com/marketplace/actions/setup-perl-environment
+
 name: Test Code
 
 # FIXME: IO::Compress::Brotli doesn't install on Windows
@@ -10,6 +13,8 @@ on:
     tags-ignore:
       - '*'
   pull_request:
+  schedule:
+    - cron: '12 19 2 * *'
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -34,6 +39,7 @@ jobs:
         run: |
           cpanm -iqn File::Spec ExtUtils::MakeMaker Test::Most
           cpanm -iqn --installdeps --notest .
+          # find . -name build.log | xargs cat
       - name: Install Windows Dependencies
         if: matrix.os == 'windows-latest'
         run: cpanm -iqn Win32::Process IPC::System::Simple
