@@ -376,13 +376,11 @@ END {
 			# OK to send 304 if possible
 			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
 			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
-			  $generate_304 && ($status == 200)) {
-				if($ENV{'HTTP_IF_MODIFIED_SINCE'}) {
-					_check_modified_since({
-						since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
-						modified => $cobject->created_at()
-					});
-				}
+			  $generate_304 && ($status == 200) && $ENV{'HTTP_IF_MODIFIED_SINCE'}) {
+				_check_modified_since({
+					since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
+					modified => $cobject->created_at()
+				});
 			}
 			if($send_body && ($status == 200) && defined($cache_hash)) {
 				$body = $cache_hash->{'body'};
@@ -686,7 +684,7 @@ sub _check_modified_since {
 		$logger->debug("_check_modified_since: Compare $$params{modified} with $s");
 	}
 	if($$params{modified} <= $s) {
-		push @o, "Status: 304 Not Modified";
+		push @o, 'Status: 304 Not Modified';
 		$status = 304;
 		$send_body = 0;
 		if($logger) {
