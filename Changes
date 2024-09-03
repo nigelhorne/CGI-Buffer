@@ -1,5 +1,8 @@
 Revision history for CGI-Buffer
 
+0.87
+	Support CircleCI
+
 0.86	Tue Jun  4 20:20:38 EDT 2024
 	cache_age is now known as cache_duration
 
