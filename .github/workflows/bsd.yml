@@ -11,16 +11,16 @@ on:
   pull_request:
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         os:
           - name: freebsd
-            version: '13.0'
+            version: '13.3'
             pkginstall: pkg install -y p5-ExtUtils-MakeMaker p5-IO-Compress-Brotli p5-Digest-MD5 p5-HTML-Packer p5-IO-String p5-JavaScript-Packer p5-HTTP-Date p5-HTML-Lint
           - name: openbsd
-            version: '7.1'
+            version: '7.5'
             pkginstall: pkg_add p5-List-MoreUtils brotli p5-HTTP-Date
 
     steps:
@@ -38,6 +38,6 @@ jobs:
             sudo ${{ matrix.os.pkginstall }}
             curl -L https://cpanmin.us | sudo perl - --verbose --notest --installdeps --with-configure --with-develop .
             sudo chown -R runner:runner .
-            perl Makefile.PL
-            make
-            prove -wlmb t
+            AUTOMATED_TESTING=1 perl Makefile.PL
+            AUTOMATED_TESTING=1 make
+            AUTOMATED_TESTING=1 prove -wlmb t
