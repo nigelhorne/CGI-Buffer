@@ -33,6 +33,15 @@ if(($^O ne 'MSWin32') && ($^O ne 'openbsd')) {
 	$prereq_pm{'IO::Compress::Brotli'} = 0.003;
 }
 
+my $distargs = {
+	COMPRESS => 'gzip -9f',
+	SUFFIX => 'gz'
+};
+
+if($^O eq 'darwin') {
+	$distargs->{'TAR'} = 'gtar';
+}
+
 WriteMakefile(
 	NAME	=> 'CGI::Buffer',
 	AUTHOR	=> q{Nigel Horne <njh@bandsman.co.uk>},
@@ -53,8 +62,8 @@ WriteMakefile(
 		# 'Test::Kwalitee' => 0,
 		'WWW::RT::CPAN' => 0
 	}, PREREQ_PM  => \%prereq_pm,
-	dist	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-	clean	 => { FILES => 'CGI-Buffer-*' },
+	clean => { FILES => 'CGI-Buffer-*'
+	}, dist => $distargs,
 	META_MERGE		=> {
 		'meta-spec' => { version => 2 },
 		resources => {
