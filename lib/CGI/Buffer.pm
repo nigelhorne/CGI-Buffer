@@ -599,6 +599,9 @@ END {
 			HTTP::Status->import();
 
 			push @o, "Status: $status " . HTTP::Status::status_message($status);
+			if($info) {
+				$info->status($status);
+			}
 		}
 	} else {
 		push @o, "X-CGI-Buffer-$VERSION: No headers";
