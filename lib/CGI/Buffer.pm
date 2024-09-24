@@ -1171,19 +1171,22 @@ sub _compress {
 			push @o, "Vary: Accept-Encoding";
 		}
 	} elsif($encoding eq 'br') {
-		require IO::Compress::Brotli;
-		IO::Compress::Brotli->import();
+		if(eval { require IO::Compress::Brotli }) {
+			IO::Compress::Brotli->import();
 
-		# Avoid 'Wide character in memGzip'
-		unless($encode_loaded) {
-			require Encode;
-			$encode_loaded = 1;
-		}
-		my $nbody = IO::Compress::Brotli::bro(Encode::encode_utf8($body));
-		if(length($nbody) < length($body)) {
-			$body = $nbody;
-			push @o, "Content-Encoding: $encoding";
-			push @o, "Vary: Accept-Encoding";
+			# Avoid 'Wide character in memGzip'
+			unless($encode_loaded) {
+				require Encode;
+				$encode_loaded = 1;
+			}
+			my $nbody = IO::Compress::Brotli::bro(Encode::encode_utf8($body));
+			if(length($nbody) < length($body)) {
+				$body = $nbody;
+				push @o, "Content-Encoding: $encoding";
+				push @o, "Vary: Accept-Encoding";
+			}
+		} else {
+			$status = 406;
 		}
 	}
 }

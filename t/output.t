@@ -165,7 +165,7 @@ OUTPUT: {
         ok(defined($body));
         ok(length($body) eq $length);
 
-        if(($^O eq 'MSWin32') || ($^O eq 'openbsd')) {
+	if(($^O eq 'MSWin32') || ($^O eq 'openbsd') || ($^O eq 'freebsd')) {
                 TODO: {
                         local $TODO = "IO::Compress::Brotli doesn't support Windows or OpenBSD";
                         ok($headers =~ /^Content-Encoding: br/m);
@@ -175,16 +175,22 @@ OUTPUT: {
                         ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
                         html_ok($body, 'HTML:Lint shows no errors');
                 }
-        } else {
+	} elsif(eval { require IO::Compress::Brotli }) {
                 ok($headers =~ /^Content-Encoding: br/m);
-		require IO::Compress::Brotli;
+
 		IO::Compress::Brotli->import();
 
                 $body = IO::Compress::Brotli::unbro($body, 1024);
 		ok(defined($body));
                 ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
                 html_ok($body, 'HTML:Lint shows no errors');
-        }
+	} else {
+		SKIP: {
+			ok($headers =~ /^Status: 406/m);
+
+			skip('Install IO::Compress::Brotli to test Brotli compression', 3);
+		}
+	}
 
 	#..........................................
 	delete $ENV{'SERVER_PROTOCOL'};

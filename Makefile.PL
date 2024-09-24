@@ -28,9 +28,10 @@ my %prereq_pm = (
 	'HTTP::Status' => 0,
 );
 
-if(($^O ne 'MSWin32') && ($^O ne 'openbsd')) {
-	# Doesn't work on Windows or compile on OpenBSD
-	$prereq_pm{'IO::Compress::Brotli'} = 0.003;
+if(($^O ne 'MSWin32') && ($^O ne 'openbsd') && ($^O ne 'freebsd')) {
+	# Doesn't work on Windows or compile on OpenBSD/FreeBSD
+	# Also doesn't compile on Arm on Linux, so let's give up
+	# $prereq_pm{'IO::Compress::Brotli'} = 0.003;
 }
 
 my $distargs = {
