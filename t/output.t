@@ -167,7 +167,7 @@ OUTPUT: {
 
 	if(($^O eq 'MSWin32') || ($^O eq 'openbsd') || ($^O eq 'freebsd')) {
                 TODO: {
-                        local $TODO = "IO::Compress::Brotli doesn't support Windows or OpenBSD";
+			local $TODO = "IO::Compress::Brotli doesn't support Windows or OpenBSD";
                         ok($headers =~ /^Content-Encoding: br/m);
 
                         # $body = IO::Compress::Brotli::unbro($body, 1024);

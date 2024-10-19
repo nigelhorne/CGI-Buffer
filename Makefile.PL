@@ -34,19 +34,19 @@ if(($^O ne 'MSWin32') && ($^O ne 'openbsd') && ($^O ne 'freebsd')) {
 	# $prereq_pm{'IO::Compress::Brotli'} = 0.003;
 }
 
-my $distargs = {
+my $dist = {
 	COMPRESS => 'gzip -9f',
 	SUFFIX => 'gz'
 };
 
 if($^O eq 'darwin') {
-	$distargs->{'TAR'} = 'gtar';
+	$dist->{'TAR'} = 'gtar';
 }
 
 WriteMakefile(
 	NAME	=> 'CGI::Buffer',
 	AUTHOR	=> q{Nigel Horne <njh@bandsman.co.uk>},
-	VERSION_FROM				=> 'lib/CGI/Buffer.pm',
+	VERSION_FROM			=> 'lib/CGI/Buffer.pm',
 	ABSTRACT_FROM			 => 'lib/CGI/Buffer.pm',
 		((defined($ExtUtils::MakeMaker::VERSION) &&
 		 ($ExtUtils::MakeMaker::VERSION >= 6.3002))
@@ -64,7 +64,7 @@ WriteMakefile(
 		# 'Test::Kwalitee' => 0,
 	}, PREREQ_PM  => \%prereq_pm,
 	clean => { FILES => 'CGI-Buffer-*'
-	}, dist => $distargs,
+	}, dist => $dist,
 	META_MERGE		=> {
 		'meta-spec' => { version => 2 },
 		resources => {

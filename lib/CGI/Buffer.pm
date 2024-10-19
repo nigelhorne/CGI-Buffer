@@ -141,7 +141,11 @@ END {
 			HTTP::Status->import();
 
 			if(!defined($status)) {
-				$status = 200;
+				if($info) {
+					$status = $info->status();
+				} else {
+					$status = 200;
+				}
 			}
 			print "Status: $status ",
 				HTTP::Status::status_message($status),
@@ -337,6 +341,9 @@ END {
 				}
 				$unzipped_body = $body;
 				$status = 206;
+				if($info) {
+					$info->status(206);
+				}
 			}
 		}
 		_compress({ encoding => $encoding });
@@ -402,6 +409,9 @@ END {
 					}
 					$send_body = 0;
 					$status = 500;
+					if($info) {
+						$info->status(500);
+					}
 				}
 			}
 			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
@@ -453,6 +463,9 @@ END {
 					push @o, "Status: 304 Not Modified";
 					$send_body = 0;
 					$status = 304;
+					if($info) {
+						$info->status(304);
+					}
 					if($logger) {
 						$logger->debug('Set status to 304');
 					}
@@ -1187,6 +1200,9 @@ sub _compress {
 			}
 		} else {
 			$status = 406;
+			if($info) {
+				$info->status(406);
+			}
 		}
 	}
 }
