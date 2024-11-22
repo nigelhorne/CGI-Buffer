@@ -6,6 +6,7 @@ Revision history for CGI-Buffer
 	Set CGI::Info::status() if available
 	IO::Compress::Brotli doesn't work on FreeBSD or Arm Linux
 	Improve setting CGI::Info status
+	Refactor _compress
 
 0.86	Tue Jun  4 20:20:38 EDT 2024
 	cache_age is now known as cache_duration

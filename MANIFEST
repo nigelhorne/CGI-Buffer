@@ -5,6 +5,7 @@ LICENSE
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
+META.json
 README
 README.md
 src/testit
@@ -27,15 +28,16 @@ t/last_mod.t
 t/links.t
 t/manifest.t
 t/metrics.t
+t/modules-used.t
 t/namespaces.t
 t/no404s.t
 t/noopentickets.t
 t/noplan.t
 t/output.t
 t/pod-cm.t
+t/pod-spelling.t
 t/pod-synopsis.t
 t/pod.t
-t/pod_spelling.t
 t/port.t
 t/prereq.t
 t/snippets.t
@@ -43,5 +45,4 @@ t/spelling.t
 t/strict.t
 t/too_late.t
 t/unused.t
-t/used.t
 t/vars.t

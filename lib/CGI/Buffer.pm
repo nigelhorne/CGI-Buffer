@@ -1158,54 +1158,52 @@ sub _set_content_type
 }
 
 sub _compress {
-	my %params = (ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
-
-	return unless(defined($body));
+	my %params = ref $_[0] eq 'HASH' ? %{ $_[0] } : @_;
+	return unless defined $body;
 
 	my $encoding = $params{encoding};
+	return if(!$encoding || length($body) < MIN_GZIP_LEN);
 
-	if((length($encoding) == 0) || (length($body) < MIN_GZIP_LEN)) {
-		return;
-	}
+	# Ensure UTF-8 encoding is handled
+	my $encode_utf8 = sub {
+		# Avoid 'Wide character in memGzip'
+		# state $encode_loaded = do {
+			# require Encode;
+			# 1;
+		# };
+		require Encode;
+		Encode::encode_utf8(shift);
+	};
 
+	# Common logic for setting headers
+	my $set_headers = sub {
+		my ($encoding) = @_;
+		push @o, "Content-Encoding: $encoding", 'Vary: Accept-Encoding';
+	};
+
+	# Gzip compression
 	if($encoding eq 'gzip') {
 		require Compress::Zlib;
-		Compress::Zlib->import;
-
-		# Avoid 'Wide character in memGzip'
-		unless($encode_loaded) {
-			require Encode;
-			$encode_loaded = 1;
-		}
-		my $nbody = Compress::Zlib::memGzip(\Encode::encode_utf8($body));
-		if(length($nbody) < length($body)) {
-			$body = $nbody;
-			push @o, "Content-Encoding: $encoding";
-			push @o, "Vary: Accept-Encoding";
+		my $compressed_body = Compress::Zlib::memGzip($encode_utf8->($body));
+		if(length($compressed_body) < length($body)) {
+			$body = $compressed_body;
+			$set_headers->($encoding);
 		}
 	} elsif($encoding eq 'br') {
-		if(eval { require IO::Compress::Brotli }) {
-			IO::Compress::Brotli->import();
-
-			# Avoid 'Wide character in memGzip'
-			unless($encode_loaded) {
-				require Encode;
-				$encode_loaded = 1;
-			}
-			my $nbody = IO::Compress::Brotli::bro(Encode::encode_utf8($body));
-			if(length($nbody) < length($body)) {
-				$body = $nbody;
-				push @o, "Content-Encoding: $encoding";
-				push @o, "Vary: Accept-Encoding";
+		# Brotli compression
+		if(eval { require IO::Compress::Brotli; 1 }) {
+			my $compressed_body = IO::Compress::Brotli::bro($encode_utf8->($body));
+			if(length($compressed_body) < length($body)) {
+				$body = $compressed_body;
+				$set_headers->($encoding);
 			}
 		} else {
 			$status = 406;
-			if($info) {
-				$info->status(406);
-			}
+			$info->status(406) if($info);
 		}
 	}
 }
+
 
 =head1 AUTHOR
 
