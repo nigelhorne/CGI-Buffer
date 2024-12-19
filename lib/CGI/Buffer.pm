@@ -320,7 +320,7 @@ END {
 				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
 			}
 			if($ENV{'HTTP_IF_NONE_MATCH'} eq $etag) {
-				push @o, "Status: 304 Not Modified";
+				push @o, 'Status: 304 Not Modified';
 				$send_body = 0;
 				$status = 304;
 				if($logger) {
@@ -375,11 +375,10 @@ END {
 					@o = ("X-CGI-Buffer-$VERSION: Hit");
 					if($info) {
 						my $host_name = $info->host_name();
-						push @o, "X-Cache: HIT from $host_name";
-						push @o, "X-Cache-Lookup: HIT from $host_name";
+						push @o, "X-Cache: HIT from $host_name",
+							"X-Cache-Lookup: HIT from $host_name";
 					} else {
-						push @o, 'X-Cache: HIT';
-						push @o, 'X-Cache-Lookup: HIT';
+						push @o, 'X-Cache: HIT', 'X-Cache-Lookup: HIT';
 					}
 				} elsif($logger) {
 					$logger->warn("Error retrieving data for key $key");
@@ -438,7 +437,7 @@ END {
 						$logger->debug("Compare etags $ENV{HTTP_IF_NONE_MATCH} and $etag");
 					}
 					if(($ENV{'HTTP_IF_NONE_MATCH'} eq $etag) && $generate_304) {
-						push @o, "Status: 304 Not Modified";
+						push @o, 'Status: 304 Not Modified';
 						$status = 304;
 						$send_body = 0;
 						if($logger) {
@@ -469,7 +468,7 @@ END {
 					$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
 				}
 				if(defined($etag) && ($etag eq $ENV{'HTTP_IF_NONE_MATCH'}) && ($status == 200)) {
-					push @o, "Status: 304 Not Modified";
+					push @o, 'Status: 304 Not Modified';
 					$send_body = 0;
 					$status = 304;
 					if($info) {
@@ -493,7 +492,7 @@ END {
 					if($logger) {
 						$logger->debug('Set Last-Modified to ', HTTP::Date::time2str($cobject->created_at()));
 					}
-					push @o, "Last-Modified: " . HTTP::Date::time2str($cobject->created_at());
+					push @o, 'Last-Modified: ' . HTTP::Date::time2str($cobject->created_at());
 				}
 			}
 		} else {
@@ -542,9 +541,9 @@ END {
 				if($generate_last_modified) {
 					$cobject = $cache->get_object($key);
 					if(defined($cobject)) {
-						push @o, "Last-Modified: " . HTTP::Date::time2str($cobject->created_at());
+						push @o, 'Last-Modified: ' . HTTP::Date::time2str($cobject->created_at());
 					} else {
-						push @o, "Last-Modified: " . HTTP::Date::time2str(time);
+						push @o, 'Last-Modified: ' . HTTP::Date::time2str(time);
 					}
 				}
 			}
