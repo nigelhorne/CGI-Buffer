@@ -22,6 +22,7 @@ my %prereq_pm = (
 	'JavaScript::Packer' => 2.00,
 	'HTTP::Date' => 0,
 	'File::Spec' => 0,
+	'Readonly' => 0,
 	'Time::localtime' => 0,
 	'HTML::Lint' => 0,
 	'Storable' => 0,

@@ -10,6 +10,16 @@ use CGI::Info;
 use Carp;
 use HTTP::Date;
 use Text::Diff;	# For debugging
+use Readonly;
+
+Readonly my $DEFAULT_GENERATE_ETAG => 1;
+Readonly my $DEFAULT_GENERATE_304 => 1;
+Readonly my $DEFAULT_GENERATE_LAST_MODIFIED => 1;
+Readonly my $DEFAULT_COMPRESS_CONTENT => 1;
+Readonly my $DEFAULT_OPTIMISE_CONTENT => 0;
+Readonly my $DEFAULT_LINT_CONTENT => 0;
+Readonly my $MIN_GZIP_LEN => 32;
+
 
 =head1 NAME
 
@@ -72,14 +82,13 @@ which works well but isn't really what you want.
 
 =cut
 
-use constant MIN_GZIP_LEN => 32;
+our $generate_etag = $DEFAULT_GENERATE_ETAG;
+our $generate_304 = $DEFAULT_GENERATE_304;
+our $generate_last_modified = $DEFAULT_GENERATE_LAST_MODIFIED;
+our $compress_content = $DEFAULT_COMPRESS_CONTENT;
+our $optimise_content = $DEFAULT_OPTIMISE_CONTENT;
+our $lint_content = $DEFAULT_LINT_CONTENT;
 
-our $generate_etag = 1;
-our $generate_304 = 1;
-our $generate_last_modified = 1;
-our $compress_content = 1;
-our $optimise_content = 0;
-our $lint_content = 0;
 our $cache;
 our $cache_duration;
 our $cache_key;
@@ -1165,7 +1174,7 @@ sub _compress {
 	return unless defined $body;
 
 	my $encoding = $params{encoding};
-	return if(!$encoding || length($body) < MIN_GZIP_LEN);
+	return if(!$encoding || length($body) < $MIN_GZIP_LEN);
 
 	# Ensure UTF-8 encoding is handled
 	my $encode_utf8 = sub {

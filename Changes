@@ -1,6 +1,7 @@
 Revision history for CGI-Buffer
 
 0.87
+	Use Readonly
 	Support CircleCI
 	Use gtar to create a distribution on Macs
 	Set CGI::Info::status() if available
