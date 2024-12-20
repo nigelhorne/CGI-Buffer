@@ -35,13 +35,12 @@ t/noopentickets.t
 t/noplan.t
 t/output.t
 t/pod-cm.t
+t/pod-snippets.t
 t/pod-spelling.t
 t/pod-synopsis.t
 t/pod.t
 t/port.t
 t/prereq.t
-t/snippets.t
-t/spelling.t
 t/strict.t
 t/too_late.t
 t/unused.t
