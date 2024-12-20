@@ -23,6 +23,7 @@ my %prereq_pm = (
 	'HTTP::Date' => 0,
 	'File::Spec' => 0,
 	'Readonly' => 0,
+	'Text::Diff' => 0,
 	'Time::localtime' => 0,
 	'HTML::Lint' => 0,
 	'Storable' => 0,

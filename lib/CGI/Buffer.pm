@@ -20,7 +20,6 @@ Readonly my $DEFAULT_OPTIMISE_CONTENT => 0;
 Readonly my $DEFAULT_LINT_CONTENT => 0;
 Readonly my $MIN_GZIP_LEN => 32;
 
-
 =head1 NAME
 
 CGI::Buffer - Verify, Cache and Optimise CGI Output
