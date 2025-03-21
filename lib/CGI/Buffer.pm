@@ -1194,7 +1194,7 @@ sub _compress {
 	# Gzip compression
 	if($encoding eq 'gzip') {
 		require Compress::Zlib;
-		my $compressed_body = Compress::Zlib::memGzip($encode_utf8->($body));
+		my $compressed_body = Compress::Zlib::memGzip(\$encode_utf8->($body));
 		if(length($compressed_body) < length($body)) {
 			$body = $compressed_body;
 			$set_headers->($encoding);
@@ -1202,7 +1202,7 @@ sub _compress {
 	} elsif($encoding eq 'zstd') {
 		# Facebook
 		if(eval { require Compress::Zstd; 1 }) {
-			my $compressed_body = Compress::Zstd::compress($encode_utf8->($body));
+			my $compressed_body = Compress::Zstd::compress(\$encode_utf8->($body));
 			if(length($compressed_body) < length($body)) {
 				$body = $compressed_body;
 				$set_headers->($encoding);
