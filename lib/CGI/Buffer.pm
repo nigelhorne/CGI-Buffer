@@ -1145,7 +1145,7 @@ sub _should_gzip
 		}
 		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
 		foreach my $method(split(/,\s?/, $accept)) {
-			if(($method eq 'gzip') || ($method eq 'x-gzip') || ($method eq 'br')) {
+			if(($method eq 'gzip') || ($method eq 'x-gzip') || ($method eq 'br') || ($method eq 'zstd')) {
 				return $method;
 			}
 		}
@@ -1187,7 +1187,7 @@ sub _compress {
 
 	# Common logic for setting headers
 	my $set_headers = sub {
-		my ($encoding) = @_;
+		my $encoding = shift;
 		push @o, "Content-Encoding: $encoding", 'Vary: Accept-Encoding';
 	};
 
@@ -1198,6 +1198,18 @@ sub _compress {
 		if(length($compressed_body) < length($body)) {
 			$body = $compressed_body;
 			$set_headers->($encoding);
+		}
+	} elsif($encoding eq 'zstd') {
+		# Facebook
+		if(eval { require Compress::Zstd; 1 }) {
+			my $compressed_body = Compress::Zstd::compress($encode_utf8->($body));
+			if(length($compressed_body) < length($body)) {
+				$body = $compressed_body;
+				$set_headers->($encoding);
+			}
+		} else {
+			$status = 406;
+			$info->status(406) if($info);
 		}
 	} elsif($encoding eq 'br') {
 		# Brotli compression
