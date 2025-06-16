@@ -175,7 +175,7 @@ OUTPUT: {
                         ok($body =~ /<HTML><HEAD><TITLE>Hello, world<\/TITLE><\/HEAD><BODY><P>The quick brown fox jumped over the lazy dog.<\/P><\/BODY><\/HTML>\n$/);
                         html_ok($body, 'HTML:Lint shows no errors');
                 }
-	} elsif(eval { require IO::Compress::Brotli }) {
+	} elsif(eval 'require IO::Compress::Brotli' && !$@) {
                 ok($headers =~ /^Content-Encoding: br/m);
 
 		IO::Compress::Brotli->import();
