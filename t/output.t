@@ -148,10 +148,10 @@ OUTPUT: {
 
 	open($fin, '-|', "$^X -Iblib/lib $filename");
 
-	$keep = $_;
-	undef $/;
-	$output = <$fin>;
-	$/ = $keep;
+	{
+		local undef $/;
+		$output = <$fin>;
+	}
 
 	close $tmp;
 
