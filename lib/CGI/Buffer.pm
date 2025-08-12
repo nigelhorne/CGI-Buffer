@@ -390,7 +390,7 @@ END {
 			# OK to send 304 if possible
 			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
 			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
-			  $generate_304 && ($status == 200) && $ENV{'HTTP_IF_MODIFIED_SINCE'}) {
+			  $generate_304 && ($status == 200) && $ENV{'HTTP_IF_MODIFIED_SINCE'} && $cobject) {
 				_check_modified_since({
 					since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
 					modified => $cobject->created_at()
