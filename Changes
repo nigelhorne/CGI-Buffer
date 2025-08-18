@@ -3,6 +3,7 @@ Revision history for CGI-Buffer
 0.89
 	Fix uninitialized variable
 	More helpful error message
+	Reduce chance of key name clash
 
 0.88	Sun Mar 23 11:31:45 EDT 2025
 	Added support for Zstd

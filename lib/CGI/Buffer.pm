@@ -780,7 +780,7 @@ sub _generate_key {
 		$info = CGI::Info->new({ cache => $cache });
 	}
 
-	my $key = $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
+	my $key = __PACKAGE__ . '::' . $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
 	if($lingua) {
 		$key .= '::' . $lingua->language();
 	}
