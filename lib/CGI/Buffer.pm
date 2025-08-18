@@ -380,7 +380,7 @@ END {
 						push @o, 'X-Cache: HIT', 'X-Cache-Lookup: HIT';
 					}
 				} elsif($logger) {
-					$logger->warn("Error retrieving data for key $key");
+					$logger->warn(__PACKAGE__, ": Error retrieving data for key $key");
 				} else {
 					carp(__PACKAGE__, ": error retrieving data for key $key");
 				}
