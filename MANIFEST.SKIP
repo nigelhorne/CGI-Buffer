@@ -69,3 +69,11 @@
 CGI-.*
 .test-script-*
 typescript
+
+# Super-linter per-repo tuning files - not for distribution
+^\.perlcriticrc$
+^\.jscpd\.json$
+^\.markdown-lint\.yml$
+# Super-linter tuning files - not for distribution
+^\.prettierignore$
+^\.textlintrc$

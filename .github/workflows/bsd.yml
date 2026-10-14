@@ -7,9 +7,9 @@ permissions:
 on:
   push:
     branches:
-      - '*'
+      - "*"
     tags-ignore:
-      - '*'
+      - "*"
   pull_request:
 jobs:
   build:
@@ -19,10 +19,10 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '13.3'
+            version: "13.3"
             pkginstall: pkg install -y p5-ExtUtils-MakeMaker p5-IO-Compress-Brotli p5-Digest-MD5 p5-HTML-Packer p5-IO-String p5-JavaScript-Packer p5-HTTP-Date p5-HTML-Lint
           - name: openbsd
-            version: '7.5'
+            version: "7.5"
             pkginstall: pkg_add p5-List-MoreUtils brotli p5-HTTP-Date
 
     steps:
