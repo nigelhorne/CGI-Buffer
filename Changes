@@ -71,6 +71,26 @@ Revision history for CGI-Buffer
 	- optimise_content: document.write() calls in different <script>
 		blocks could be merged, and the script's type was changed
 	- optimise_content: several regexes took quadratic time on hostile input
+	[ Enhancements ]
+	- CGI::Info, HTTP::Date and HTTP::Status are only loaded when needed.  A
+		request that doesn't use the server-side cache or optimise_content
+		takes about 44ms rather than 160ms.  A script that uses CGI::Info
+		must now load it itself
+	- init() warns about, and ignores, options that are unknown or of the
+		wrong type, and returns "CGI::Buffer" so that calls can be chained,
+		e.g. CGI::Buffer::init(...)->is_cached()
+	- Messages can be replaced, e.g. translated, with init(messages => {...}),
+		including plural forms
+	- optimise_content: links in <a> and <img> tags with other attributes
+		before href or src, e.g. <img border=0 src=...>, are shortened, and
+		whitespace around <p> tags with attributes is removed
+	[ More Bug Fixes ]
+	- X-Cache said HIT for a page that had just been generated
+	- init(cache => undef) didn't turn the cache off
+	- When the script has changed, only the out of date entry is removed from
+		the cache (RT104471)
+	- HTML::Lint errors are given with carp rather than warn
+	- Only HTTP_RANGE is read, not the non-standard Range environment variable
 
 0.88	Sun Mar 23 11:31:45 EDT 2025
 	Added support for Zstd

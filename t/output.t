@@ -207,7 +207,7 @@ OUTPUT: {
 
 	close $tmp;
 
-	ok($output =~ /href="\/"/m);
+	ok($output =~ /href="\/"/mi);	# The case of the tag is kept
 	ok($output !~ /<script>\s/m);
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
