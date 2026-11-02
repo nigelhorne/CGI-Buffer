@@ -5,6 +5,27 @@ Revision history for CGI-Buffer
 	More helpful error message
 	Reduce chance of key name clash
 	Use Test::Needs for brotli
+	[ Security ]
+	- Pages for clients that have logged in (Authorization or REMOTE_USER)
+		and requests other than GET and HEAD are no longer cached
+	- Responses with Set-Cookie, or a Cache-Control of no-store, no-cache or
+		private, are no longer cached.  A Set-Cookie header was
+		being replayed to other clients
+	- A Vary on anything other than Accept-Encoding (or Accept-Language with
+		lingua) now stops a response from being cached.  The code
+		that was meant to honour it could never run
+	- A page that includes the value of the client's csrf_token cookie is no
+		longer cached, and that cookie is no longer part of the key
+	- A client's Cache-Control: max-age=99999999 kept pages in the cache
+		for years.  Values over 600 seconds are now ignored
+	- Cache-Control with more than one directive (e.g. "no-cache, max-age=0")
+		or in upper case didn't stop the cache being used
+	- HTML with no </html>, which suggests that the script died, isn't stored
+	- optimise_content: links to other sites whose names start with ours
+		(e.g. www.example.com.evil.org) were made local
+	- PATH_INFO is now part of the generated cache key
+	- Google Analytics cookies after the first weren't excluded from the
+		cache key
 
 0.88	Sun Mar 23 11:31:45 EDT 2025
 	Added support for Zstd

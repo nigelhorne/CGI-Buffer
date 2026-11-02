@@ -20,6 +20,20 @@ Readonly my $DEFAULT_OPTIMISE_CONTENT => 0;
 Readonly my $DEFAULT_LINT_CONTENT => 0;
 Readonly my $MIN_GZIP_LEN => 32;
 
+# The longest a client's Cache-Control: max-age may keep a page in the
+# server-side cache, since one client's request affects all others
+Readonly my $MAX_CLIENT_CACHE_SECONDS => 600;
+
+# The cookie that holds the token protecting forms, different for each client
+# but it doesn't change the output
+Readonly my $FORM_TOKEN_COOKIE => 'csrf_token';
+
+# Cache-Control directives which, in a request or a response, stop the cache
+Readonly my %NO_CACHE_DIRECTIVES => map { $_ => 1 } qw(no-store no-cache private);
+
+# Request methods whose responses may be cached
+Readonly my %SAFE_METHODS => map { $_ => 1 } qw(GET HEAD);
+
 =head1 NAME
 
 CGI::Buffer - Verify, Cache and Optimise CGI Output
@@ -221,16 +235,19 @@ END {
 				$protocol = 'http';
 			}
 
-			$body =~ s/<a\s+?href="$protocol:\/\/$href"/<a href="\/"/gim;
-			$body =~ s/<a\s+?href="$protocol:\/\/$href/<a href="/gim;
+			# The host name must be followed by the end of the
+			# link, or the start of its path, query or fragment,
+			# otherwise www.example.com.evil.org would become local
+			$body =~ s/<a\s+?href="\Q$protocol\E:\/\/\Q$href\E"/<a href="\/"/gi;
+			$body =~ s/<a\s+?href="\Q$protocol\E:\/\/\Q$href\E(?=[\/?#])/<a href="/gi;
 
 			# TODO use URI->path_segments to change links in
 			# /aa/bb/cc/dd.htm which point to /aa/bb/ff.htm to
 			# ../ff.htm
 
 			# TODO: <img border=0 src=...>
-			$body =~ s/<img\s+?src="$protocol:\/\/$href"/<img src="\/"/gim;
-			$body =~ s/<img\s+?src="$protocol:\/\/$href/<img src="/gim;
+			$body =~ s/<img\s+?src="\Q$protocol\E:\/\/\Q$href\E"/<img src="\/"/gi;
+			$body =~ s/<img\s+?src="\Q$protocol\E:\/\/\Q$href\E(?=[\/?#])/<img src="/gi;
 
 			# Don't use HTML::Clean because of RT402
 			# my $h = new HTML::Clean(\$body);
@@ -496,7 +513,7 @@ END {
 			}
 		} else {
 			# Not in the server side cache
-			if($status == 200) {
+			if(($status == 200) && _is_storable($headers, $unzipped_body)) {
 				unless($cache_duration) {
 					# It would be great if CHI::set()
 					# allowed the time to be 'lru' for least
@@ -781,40 +798,22 @@ sub _generate_key {
 	}
 
 	my $key = __PACKAGE__ . '::' . $info->browser_type() . '::' . $info->domain_name() . '::' . $info->script_name() . '::' . $info->as_string();
+	if(defined($ENV{'PATH_INFO'}) && length($ENV{'PATH_INFO'})) {
+		# /cgi-bin/foo.cgi/bar and /cgi-bin/foo.cgi/baz are different pages
+		$key .= '::PATH_INFO=' . $ENV{'PATH_INFO'};
+	}
 	if($lingua) {
 		$key .= '::' . $lingua->language();
 	}
-	if($ENV{'HTTP_COOKIE'}) {
-		# Different states of the client are stored in different caches
-		# Don't put different Google Analytics in different caches, and anyway they
-		# would be wrong
-		foreach my $cookie(split(/;/, $ENV{'HTTP_COOKIE'})) {
-			unless($cookie =~ /^__utm[abcz]/) {
-				$key .= "::$cookie";
-			}
-		}
+	# Different states of the client are stored in different caches
+	foreach my $cookie(_client_cookies()) {
+		$key .= "::$cookie";
 	}
 
-	# Honour the Vary headers
-	if($headers && ($headers =~ /^Vary: .*$/m)) {
-		if(defined($logger)) {
-			$logger->debug('Found Vary header');
-		}
-		foreach my $h1(split(/\r?\n/, $headers)) {
-			my ($h1_name, $h1_value) = split /\:\s*/, $h1, 2;
-			if(lc($h1_name) eq 'vary') {
-				foreach my $h2(split(/\r?\n/, $headers)) {
-					my ($h2_name, $h2_value) = split /\:\s*/, $h2, 2;
-					if($h2_name eq $h1_value) {
-						$key .= '::' . $h2_value;
-						last;
-					}
-				}
-			}
-		}
-	}
+	# The key is needed before the script has given its headers, so a Vary
+	# header can't be part of it.  _is_storable() doesn't store those pages
 	$key =~ s/\//::/g;
-	$key =~ s/::::/::/g;
+	$key =~ s/(?:::){2,}/::/g;
 	$key =~ s/::$//;
 	if(defined($logger)) {
 		$logger->trace("Returning $key");
@@ -855,8 +854,22 @@ set(), remove() and created_at() messages, such as an L<CHI> object. It is
 used as a server-side cache to reduce the need to rerun database accesses.
 
 Items stay in the server-side cache by default for 10 minutes.
-This can be overridden by the cache_control HTTP header in the request, and
+This can be overridden by the max-age directive of the Cache-Control HTTP header
+in the request, if it's a number no larger than 600 seconds, and
 the default can be changed by the cache_duration argument to init().
+
+Responses aren't stored in the server-side cache if their headers include
+Set-Cookie,
+a Cache-Control of no-store, no-cache or private,
+or a Vary on anything other than Accept-Encoding
+(or Accept-Language when lingua is given),
+since they would be given to clients that they weren't meant for.
+Neither are HTML pages with no </html>,
+which suggests that the script died.
+A page that includes the value of the client's C<csrf_token> cookie is never
+stored.
+The C<csrf_token> and Google Analytics cookies aren't part of the generated
+cache key, other cookies and PATH_INFO are.
 
 Logger will be an object that understands debug() such as an L<Log::Log4perl>
 object.
@@ -921,18 +934,13 @@ sub init {
 		}
 	}
 	if(defined($params{cache}) && can_cache()) {
-		if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
-			my $control = $ENV{'HTTP_CACHE_CONTROL'};
+		# There is an argument not to do this since one client will
+		# affect others, so it's limited
+		my $max_age = _client_max_age();
+		if(defined($max_age) && ($max_age <= $MAX_CLIENT_CACHE_SECONDS)) {
+			$cache_duration = "$max_age seconds";
 			if(defined($logger)) {
-				$logger->debug("cache_control = $control");
-			}
-			if($control =~ /^max-age\s*=\s*(\d+)$/) {
-				# There is an argument not to do this
-				# since one client will affect others
-				$cache_duration = "$1 seconds";
-				if(defined($logger)) {
-					$logger->debug("cache_duration = $cache_duration");
-				}
+				$logger->debug("cache_duration = $cache_duration");
 			}
 		}
 		$cache_duration ||= $params{'cache_duration'};
@@ -985,33 +993,35 @@ sub set_options {
 
 Returns true if the server is allowed to store the results locally.
 
+The cache isn't used if the NO_CACHE or NO_STORE environment variables are set,
+if the request method isn't GET or HEAD,
+if the client has logged in (the Authorization header or REMOTE_USER is set),
+or if the client's Cache-Control header includes any of no-store, no-cache,
+private or max-age=0.
+The answer is decided on the first call, and doesn't change for the rest of the
+request.
+
 =cut
 
 sub can_cache {
 	if(defined($x_cache)) {
 		return ($x_cache eq 'HIT');
 	}
+	if(defined($logger) && defined($ENV{'HTTP_CACHE_CONTROL'})) {
+		$logger->debug("cache_control = $ENV{HTTP_CACHE_CONTROL}");
+	}
 
-	if(defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'})) {
-		$x_cache = 'MISS';
-		return 0;
-	}
-	if(defined($ENV{'HTTP_CACHE_CONTROL'})) {
-		my $control = $ENV{'HTTP_CACHE_CONTROL'};
-		if(defined($logger)) {
-			$logger->debug("cache_control = $control");
-		}
-		# TODO: check Authorization header not present
-		if(($control eq 'no-store') ||
-		       ($control eq 'no-cache') ||
-		       ($control eq 'max-age=0') ||
-		       ($control eq 'private')) {
-			$x_cache = 'MISS';
-			return 0;
-		}
-	}
-	$x_cache = 'HIT';
-	return 1;
+	# A request may give several directives, e.g. "no-cache, max-age=0",
+	# and any one of them forbids the cache
+	my $control = _cache_control();
+	my $max_age = _client_max_age();
+	my $forbidden = defined($ENV{'NO_CACHE'}) || defined($ENV{'NO_STORE'}) ||
+		(!_is_safe_method()) || _is_logged_in() ||
+		(grep { $NO_CACHE_DIRECTIVES{$_} } keys %{$control}) ||
+		(defined($max_age) && ($max_age == 0));
+
+	$x_cache = $forbidden ? 'MISS' : 'HIT';
+	return $forbidden ? 0 : 1;
 }
 
 =head2 is_cached
@@ -1226,6 +1236,115 @@ sub _compress {
 	}
 }
 
+# The values of a header in a block of headers
+sub _header_values {
+	my ($headers, $name) = @_;
+
+	return () unless(defined($headers));
+	return map { /^[^:]+:\s*(.*?)\s*$/ ? $1 : () } grep { /^\Q$name\E:/i } split(/\r?\n/, $headers);
+}
+
+# May this response be kept and given to other clients?
+sub _is_storable {
+	my ($headers, $body) = @_;
+
+	# It would log the next client in as this one
+	return 0 if(_header_values($headers, 'Set-Cookie') || _header_values($headers, 'Set-Cookie2'));
+
+	# It would give this client's form token to the next one
+	return 0 if(_has_form_token($body));
+
+	foreach my $control(_header_values($headers, 'Cache-Control')) {
+		foreach my $directive(split(/\s*,\s*/, lc($control))) {
+			(my $name = $directive) =~ s/\s*=.*$//;
+			return 0 if($NO_CACHE_DIRECTIVES{$name});
+		}
+	}
+
+	# Accept-Encoding is dealt with here, and lingua is part of the key.
+	# Anything else isn't part of the key, so the page would be given to
+	# clients that it wasn't meant for
+	foreach my $vary(_header_values($headers, 'Vary')) {
+		foreach my $name(split(/\s*,\s*/, lc($vary))) {
+			next if($name eq 'accept-encoding');
+			next if(($name eq 'accept-language') && $lingua);
+			return 0;
+		}
+	}
+
+	# An HTML page with no </html> suggests that the script died part way
+	# through, so don't give the partial page to other clients
+	if(defined($content_type[0]) && defined($content_type[1]) &&
+	   (lc($content_type[0]) eq 'text') && (lc($content_type[1]) =~ /^html/) &&
+	   defined($body) && ($body =~ /<html\b/i) && ($body !~ /<\/html\s*+>/i)) {
+		if($logger) {
+			$logger->debug('Not storing an HTML page with no </html>');
+		}
+		return 0;
+	}
+	return 1;
+}
+
+sub _is_safe_method {
+	return (!defined($ENV{'REQUEST_METHOD'})) || $SAFE_METHODS{$ENV{'REQUEST_METHOD'}};
+}
+
+sub _is_logged_in {
+	return $ENV{'HTTP_AUTHORIZATION'} || $ENV{'REMOTE_USER'};
+}
+
+# The client's cookies, except for Google Analytics ones and the token that
+# protects forms, which are different for each client but don't change the output.
+# A page with a form is sent that token in a Set-Cookie header, so _is_storable()
+# doesn't store it
+sub _client_cookies {
+	return () unless($ENV{'HTTP_COOKIE'});
+	return grep { !/^(?:__utm[abcz]|\Q$FORM_TOKEN_COOKIE\E=)/ } split(/;\s*/, $ENV{'HTTP_COOKIE'});
+}
+
+# Does this page include the client's own form token?  _client_cookies() ignores
+# the cookie that holds it, on the understanding that it doesn't change the output.
+# A script that puts its value into the page has made the page per client
+sub _has_form_token {
+	my $body = shift;
+
+	return 0 unless($ENV{'HTTP_COOKIE'} && defined($body));
+
+	foreach my $cookie(split(/;\s*/, $ENV{'HTTP_COOKIE'})) {
+		next unless($cookie =~ /^\Q$FORM_TOKEN_COOKIE\E=(.+)$/);
+		my $token = $1;
+		return 1 if(index($body, $token) >= 0);
+		# The cookie may be encoded, what's printed may not be
+		if($token =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ge) {
+			return 1 if(index($body, $token) >= 0);
+		}
+	}
+	return 0;
+}
+
+# The directives in the request's Cache-Control header, as a hashref of
+# lower case name to value (undef when there is no value)
+sub _cache_control {
+	my %directives;
+
+	if(defined(my $control = $ENV{'HTTP_CACHE_CONTROL'})) {
+		foreach my $directive(split(/\s*,\s*/, lc($control))) {
+			my ($name, $value) = split(/\s*=\s*/, $directive, 2);
+			next unless(defined($name) && length($name));
+			$value =~ s/^"(.*)"$/$1/ if(defined($value));
+			$directives{$name} = $value;
+		}
+	}
+	return \%directives;
+}
+
+# The max-age directive in the request, or undef if there isn't a valid one.
+# This comes from the client, so it mustn't be trusted to be a number
+sub _client_max_age {
+	my $max_age = _cache_control()->{'max-age'};
+
+	return (defined($max_age) && ($max_age =~ /^\d+$/)) ? $max_age : undef;
+}
 
 =head1 AUTHOR
 
