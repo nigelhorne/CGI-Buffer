@@ -18,6 +18,10 @@ on:
   pull_request:
   schedule:
     - cron: "12 19 2 * *"
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
