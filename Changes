@@ -1,6 +1,6 @@
 Revision history for CGI-Buffer
 
-0.89
+0.89	Mon Nov  2 01:09:39 PM EST 2026
 	[ Security ]
 	- Responses that are private to a client (logged in, POST, Set-Cookie,
 		Cache-Control: private/no-store/no-cache, Vary on other than
