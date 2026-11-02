@@ -161,7 +161,7 @@ OUTPUT: {
 	ok(defined($length));
 
 	($headers, $body) = split /\r?\n\r?\n/, $output, 2;
-	ok($headers =~ /ETag: "[A-Za-z0-F0-f]{32}"/m);
+	ok($headers =~ /ETag: "[A-Za-z0-F0-f]{32}(?:-(?:gzip|br|zstd))?"/m);
 
         ok(defined($body));
         ok(length($body) eq $length);

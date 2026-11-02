@@ -41,6 +41,7 @@ t/pod-synopsis.t
 t/pod.t
 t/port.t
 t/prereq.t
+t/regressions.t
 t/security.t
 t/strict.t
 t/too_late.t

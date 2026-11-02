@@ -26,6 +26,51 @@ Revision history for CGI-Buffer
 	- PATH_INFO is now part of the generated cache key
 	- Google Analytics cookies after the first weren't excluded from the
 		cache key
+	[ Bug Fixes ]
+	- Range: "bytes=-n" gave the first n bytes rather than the last n,
+		"bytes=0-n" was ignored and ranges were a byte short.  Backwards
+		ranges are ignored, unsatisfiable ones give a 416, and 206 and
+		416 responses include Content-Range.  Ranges are now in bytes,
+		only apply to GET, aren't compressed, honour If-Range, and a
+		Status header from the script no longer stops the 206
+	- A 304 no longer also has the script's Status: 200 or a
+		Content-Encoding
+	- If-Modified-Since was looked at before If-None-Match for a page in the
+		cache, so a 304 could be sent for a page that had changed
+	- If-Modified-Since could turn a 404 into a 304
+	- If-None-Match with a list of ETags, weak ETags or "*" wasn't
+		understood.  A match on other than GET and HEAD gives 412
+	- An ETag in the script's own headers lost its quotes when read from the
+		cache, so never matched If-None-Match
+	- Compressed and uncompressed output had the same strong ETag
+	- ETags weren't generated for HTTP/2 and HTTP/3 in some spellings
+	- A Content-Length from the script was kept when the body was changed
+	- Output for which the script gave a Content-Encoding was compressed again
+	- Headers ending in LF gave duplicate Status headers
+	- Vary: Accept-Encoding from the script left a blank line in the headers,
+		so the rest of them were sent as part of the body
+	- Vary: Accept-Encoding wasn't sent with uncompressed output
+	- Accept-Encoding parameters, e.g. "gzip;q=0.8", weren't understood, and
+		q=0 wasn't honoured.  A space before a comma wasn't understood
+	- If the first encoding the client accepts couldn't be loaded (e.g.
+		IO::Compress::Brotli isn't installed), a 406 was sent instead of
+		trying the next
+	- Content-Type "Text/html" wasn't compressed
+	- UTF-8 that a script printed as bytes was encoded twice when compressed
+	- Entries in the cache were used after they had expired
+	- An exception while sending the page lost the output.  Failures of the
+		cache or the logger now give a warning and the page is still sent
+	- Nothing in the END block was logged, since the logger was removed
+		first.  A logger that doesn't understand all of the methods is
+		ignored
+	- Text::Diff is only loaded when debugging
+	- optimise_content: changed the contents of <pre> and <textarea>
+	- optimise_content: "+" at the start of a line was deleted, breaking
+		JavaScript
+	- optimise_content: no longer removes visible spaces between tags
+	- optimise_content: document.write() calls in different <script>
+		blocks could be merged, and the script's type was changed
+	- optimise_content: several regexes took quadratic time on hostile input
 
 0.88	Sun Mar 23 11:31:45 EDT 2025
 	Added support for Zstd

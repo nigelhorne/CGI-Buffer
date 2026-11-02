@@ -9,10 +9,9 @@ use IO::String;
 use CGI::Info;
 use Carp;
 use HTTP::Date;
-use Text::Diff;	# For debugging
 use Readonly;
+use Scalar::Util;
 
-Readonly my $DEFAULT_GENERATE_ETAG => 1;
 Readonly my $DEFAULT_GENERATE_304 => 1;
 Readonly my $DEFAULT_GENERATE_LAST_MODIFIED => 1;
 Readonly my $DEFAULT_COMPRESS_CONTENT => 1;
@@ -33,6 +32,23 @@ Readonly my %NO_CACHE_DIRECTIVES => map { $_ => 1 } qw(no-store no-cache private
 
 # Request methods whose responses may be cached
 Readonly my %SAFE_METHODS => map { $_ => 1 } qw(GET HEAD);
+
+# The protocols that understand ETag, If-None-Match and If-Modified-Since
+Readonly my $CONDITIONAL_PROTOCOL => qr/^HTTP\/(?:1\.1|[23](?:\.0)?)$/;
+
+# The methods that CGI::Buffer calls on the logger
+Readonly my @LOGGER_METHODS => qw(trace debug info warn error);
+
+# An ETag sent with compressed content ends in the name of the encoding
+Readonly my $ENCODED_ETAG_SUFFIX => qr/-(?:gzip|br|zstd)"$/;
+
+# Content encodings that we can produce, and the module needed for each
+Readonly my %ENCODING_MODULE => (
+	'gzip' => 'Compress::Zlib',
+	'x-gzip' => 'Compress::Zlib',
+	'br' => 'IO::Compress::Brotli',
+	'zstd' => 'Compress::Zstd',
+);
 
 =head1 NAME
 
@@ -95,7 +111,8 @@ which works well but isn't really what you want.
 
 =cut
 
-our $generate_etag = $DEFAULT_GENERATE_ETAG;
+# By default, ETags are generated only for protocols that understand them
+our $generate_etag;
 our $generate_304 = $DEFAULT_GENERATE_304;
 our $generate_last_modified = $DEFAULT_GENERATE_LAST_MODIFIED;
 our $compress_content = $DEFAULT_COMPRESS_CONTENT;
@@ -112,24 +129,76 @@ our $status;
 our $script_mtime;
 our $cobject;
 our($x_cache, $buf, $headers, $header, $body, @content_type, $etag,
-	$send_body, @o, $encode_loaded);
+	$send_body, @o);
+
+# $raw is what the script printed, which is sent if processing it fails.
+# $sent is set once output has started.  $script_encoded is set if the script
+# gave its own Content-Encoding.  $content_encoding is the encoding that we've
+# applied.  $matched_etag is the client's ETag that If-None-Match matched
+our($raw, $sent, $script_encoded, $content_encoding, $matched_etag);
 
 BEGIN {
 	# use Exporter();
 
 	$CGI::Buffer::buf = IO::String->new();
 	$CGI::Buffer::old_buf = select($CGI::Buffer::buf);
-
-	if((!defined($ENV{'SERVER_PROTOCOL'})) ||
-	  ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.0')) {
-		$generate_etag = 0;
-	}
 }
 
 END {
 	if(defined($^V) && ($^V ge 'v5.14.0')) {
 		return if ${^GLOBAL_PHASE} eq 'DESTRUCT';	# >= 5.14.0 only
 	}
+
+	# Premise 1: anything from here on can fail, e.g. a logger or a cache
+	# Premise 2: until this is done, all that the process prints goes into
+	#	the buffer, which is never sent
+	# Conclusion: this must be the first thing that is done
+	select($CGI::Buffer::old_buf);
+
+	# This can run while an eval is unwinding, and $? is the exit status
+	local($@, $!, $?);
+
+	# Premise 1: Perl only gives a warning for an exception in an END block
+	# Premise 2: the client would be given an empty response
+	# Conclusion: catch it, and send the output as the script printed it
+	unless(eval { _send_output(); 1 }) {
+		_problem(__PACKAGE__ . ": $@");
+		unless($sent) {
+			$sent = 1;
+			if(defined($raw) && length($raw)) {
+				print _to_bytes($raw);
+			} else {
+				# The script relied upon a cache that has now failed
+				print "Status: 500 Internal Server Error\r\n\r\n";
+			}
+		}
+	}
+
+	# This will cause everything to get flushed and prevent
+	# outputs to the logger.  We need to do that now since
+	# if we leave it to Perl to delete later we may get
+	# a message that Log4perl::init() hasn't been called
+	$logger = undef;
+}
+
+# Everything that the script printed has been buffered, process and send it
+sub _send_output {
+	my $pos = $CGI::Buffer::buf->getpos;
+	$CGI::Buffer::buf->setpos(0);
+	read($CGI::Buffer::buf, $buf, $pos);
+
+	# Keep this before anything else that can fail, it's what will be sent if
+	# something does
+	$raw = $buf;
+
+	# Premise 1: an ETag is only useful if the protocol supports If-None-Match
+	# Premise 2: an explicit generate_etag argument is the caller's decision
+	# Conclusion: default it from the protocol, but only when it isn't given
+	if(!defined($generate_etag)) {
+		$generate_etag = _is_conditional_protocol() ? 1 : 0;
+	}
+
+	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
 
 	if($logger) {
 		if($ENV{'HTTP_IF_NONE_MATCH'}) {
@@ -141,18 +210,7 @@ END {
 		$logger->debug("Generate_etag = $generate_etag, ",
 			"Generate_304 = $generate_304, ",
 			"Generate_last_modified = $generate_last_modified");
-
-		# This will cause everything to get flushed and prevent
-		# outputs to the logger.  We need to do that now since
-		# if we leave it to Perl to delete later we may get
-		# a message that Log4perl::init() hasn't been called
-		$logger = undef;
 	}
-	select($CGI::Buffer::old_buf);
-	my $pos = $CGI::Buffer::buf->getpos;
-	$CGI::Buffer::buf->setpos(0);
-	read($CGI::Buffer::buf, $buf, $pos);
-	($headers, $body) = split /\r?\n\r?\n/, $buf, 2;
 
 	unless($headers || is_cached()) {
 		if($logger) {
@@ -169,17 +227,14 @@ END {
 					$status = 200;
 				}
 			}
+			$sent = 1;
 			print "Status: $status ",
 				HTTP::Status::status_message($status),
 				"\n\n";
 		}
 		return;
 	}
-	if($ENV{'REQUEST_METHOD'} && ($ENV{'REQUEST_METHOD'} eq 'HEAD')) {
-		$send_body = 0;
-	} else {
-		$send_body = 1;
-	}
+	$send_body = (defined($ENV{'REQUEST_METHOD'}) && ($ENV{'REQUEST_METHOD'} eq 'HEAD')) ? 0 : 1;
 
 	if($headers) {
 		_set_content_type($headers);
@@ -193,7 +248,7 @@ END {
 			# Don't try to retrieve it below from the cache
 			$send_body = 0;
 		}
-	} elsif(defined($content_type[0]) && (lc($content_type[0]) eq 'text') && (lc($content_type[1]) =~ /^html/) && defined($body)) {
+	} elsif(_is_html() && defined($body) && !$script_encoded) {
 		if($optimise_content) {
 			# require HTML::Clean;
 			require HTML::Packer;	# Overkill using HTML::Clean and HTML::Packer...
@@ -202,17 +257,18 @@ END {
 				$logger->trace('Packer');
 			}
 
-			my $oldlength = length($body);
-			my $newlength;
+			# Whitespace is significant in these, in a <textarea>
+			# it's the user's data
+			my $preformatted = _protect_preformatted();
 
-			if($optimise_content == 1) {
-				_optimise_content();
-			} else {
-				while(1) {
+			# Level 1 is one pass, higher levels repeat until
+			# the body stops shrinking
+			my $oldlength = length($body);
+			_optimise_content();
+			if($optimise_content >= 2) {
+				while(length($body) < $oldlength) {
+					$oldlength = length($body);
 					_optimise_content();
-					$newlength = length($body);
-					last if ($newlength >= $oldlength);
-					$oldlength = $newlength;
 				}
 			}
 
@@ -220,20 +276,8 @@ END {
 			# to http://www.example.com/foo/bar.htm, change the
 			# link to /foo/bar.htm - there's no need to include
 			# the site name in the link
-			unless(defined($info)) {
-				if($cache) {
-					$info = CGI::Info->new({ cache => $cache });
-				} else {
-					$info = CGI::Info->new();
-				}
-			}
-
-			my $href = $info->host_name();
-			my $protocol = $info->protocol();
-
-			unless($protocol) {
-				$protocol = 'http';
-			}
+			my $href = _info()->host_name();
+			my $protocol = $info->protocol() || 'http';
 
 			# The host name must be followed by the end of the
 			# link, or the start of its path, query or fragment,
@@ -265,21 +309,28 @@ END {
 			};
 			if($optimise_content >= 2) {
 				$options->{do_javascript} = 'best';
-				$body =~ s/(<script.*?>)\s*<!--/$1/gi;
-				$body =~ s/\/\/-->\s*<\/script>/<\/script>/gi;
-				$body =~ s/(<script.*?>)\s+/$1/gi;
+				# [^>] stops the tag running on into the
+				# rest of the page
+				$body =~ s/(<script[^>]*+>)\s*+<!--/$1/gi;
+				$body =~ s/\/\/-->\s*+<\/script>/<\/script>/gi;
+				$body =~ s/(<script[^>]*+>)\s++/$1/gi;
 			}
 			$body = HTML::Packer->init()->minify(\$body, $options);
 			if($optimise_content >= 2) {
 				# Change document.write("a"); document.write("b")
 				# into document.write("a"+"b");
-				while(1) {
-					$body =~ s/<script\s*?type\s*?=\s*?"text\/javascript"\s*?>(.*?)document\.write\((.+?)\);\s*?document\.write\((.+?)\)/<script type="text\/JavaScript">${1}document.write($2+$3)/igs;
-					$newlength = length($body);
-					last if ($newlength >= $oldlength);
-					$oldlength = $newlength;
-				}
+				# Every substitution shortens the body, so this
+				# always terminates.
+				# Nothing may cross a </script>, otherwise
+				# writes in different scripts get merged
+				1 while($body =~ s{
+					(<script\s+type\s*=\s*"text/javascript"\s*>)		# $1: opening tag, kept as written
+					((?:(?!</script>).)*?)					# $2: code before the writes, within this script
+					document\.write\(((?:(?!</script>)[^;])*?)\);\s*+	# $3: first argument
+					document\.write\(((?:(?!</script>)[^;])*?)\)		# $4: second argument
+				}{$1${2}document.write($3+$4)}gisx);
 			}
+			_restore_preformatted($preformatted);
 		}
 		if($lint_content) {
 			require HTML::Lint;
@@ -309,7 +360,7 @@ END {
 		}
 	}
 
-	if(defined($headers) && ($headers =~ /^Status: (\d+)/m)) {
+	if(defined($headers) && ($headers =~ /^Status:\s*(\d+)/mi)) {
 		$status = $1;
 	} elsif($info) {
 		$status = $info->status();
@@ -321,57 +372,65 @@ END {
 		$logger->debug("Initial status = $status");
 	}
 
-	# Generate the eTag before compressing, since the compressed data
-	# includes the mtime field which changes thus causing a different
-	# Etag to be generated
-	if($ENV{'SERVER_PROTOCOL'} &&
-	  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
-	  $generate_etag && defined($body)) {
-		# encode to avoid "Wide character in subroutine entry"
-		require Encode;
-		$encode_loaded = 1;
-		$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304 && ($status == 200)) {
-			if($logger) {
-				$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
-			}
-			if($ENV{'HTTP_IF_NONE_MATCH'} eq $etag) {
-				push @o, 'Status: 304 Not Modified';
-				$send_body = 0;
-				$status = 304;
-				if($logger) {
-					$logger->debug('Set status to 304');
-				}
-			} elsif($logger) {
-				$logger->debug(diff(\$body, \$cache->get(_generate_key())));
-			}
-		}
+	# Range, Content-Length, compression and the ETag all work in bytes.
+	# A script which printed bytes is left alone: encoding those would
+	# encode any UTF-8 in them a second time
+	if(defined($body)) {
+		$body = _to_bytes($body);
 	}
 
 	my $encoding = _should_gzip();
 	my $unzipped_body = $body;
 
-	if(defined($unzipped_body)) {
-		my $range = $ENV{'Range'} ? $ENV{'Range'} : $ENV{'HTTP_RANGE'};
+	# Generate the eTag before compressing, since the compressed data
+	# includes the mtime field which changes thus causing a different
+	# Etag to be generated
+	if($generate_etag && defined($body) && _is_conditional_protocol()) {
+		_generate_etag();
 
-		if($range && !$cache) {
-			# TODO: Partials
-			if($range =~ /^bytes=(\d*)-(\d*)/) {
-				if($1 && $2) {
-					$body = substr($body, $1, $2-$1);
-				} elsif($1) {
-					$body = substr($body, $1);
-				} elsif($2) {
-					$body = substr($body, 0, $2);
-				}
-				$unzipped_body = $body;
-				$status = 206;
-				if($info) {
-					$info->status(206);
-				}
+		if($ENV{'HTTP_IF_NONE_MATCH'} && $generate_304 && ($status == 200)) {
+			_check_if_none_match();
+		}
+	}
+
+	if(defined($unzipped_body)) {
+		# Conditions are looked at before Range, and If-Modified-Since
+		# isn't looked at if If-None-Match was checked and failed.
+		# _check_modified_since() checks generate_304 itself
+		if((!$cache) && $info && $ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status == 200) &&
+		   !($ENV{'HTTP_IF_NONE_MATCH'} && defined($etag))) {
+			_check_modified_since({
+				since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
+				modified => _my_age()
+			});
+		}
+
+		my $range = $ENV{'Range'} || $ENV{'HTTP_RANGE'};
+
+		# Only a successful GET can be cut up, and only if the client's
+		# copy, if it has given one, is still the current one
+		if($range && !$cache && ($status == 200) && _is_get() && _if_range_matches() &&
+		   defined(my $partial = _apply_range($body, $range))) {
+			# Premise 1: Content-Range counts the bytes of what is sent
+			# Premise 2: the offsets the client gave are in the page,
+			#	not in a compressed copy
+			# Conclusion: a part of a page is never compressed
+			$encoding = '';
+			_set_status($partial->{status});
+			push @o, "Content-Range: $partial->{content_range}";
+			if($partial->{status} == 416) {
+				# Range Not Satisfiable has no body
+				$body = undef;
+				$unzipped_body = undef;
+				$send_body = 0;
+			} else {
+				$body = $unzipped_body = $partial->{body};
 			}
 		}
-		_compress({ encoding => $encoding });
+		# A 304 or 412 has no body to compress, and mustn't say that it has
+		if($send_body || ($status == 200)) {
+			_compress({ encoding => $encoding });
+		}
 	}
 
 	if($cache) {
@@ -382,39 +441,20 @@ END {
 
 		# Cache unzipped version
 		if(!defined($body)) {
-			if($send_body) {
-				$cobject = $cache->get_object($key);
-				if(defined($cobject)) {
-					$cache_hash = Storable::thaw($cobject->value());
-					$headers = $cache_hash->{'headers'};
-					_set_content_type($headers);
-					@o = ("X-CGI-Buffer-$VERSION: Hit");
-					if($info) {
-						my $host_name = $info->host_name();
-						push @o, "X-Cache: HIT from $host_name",
-							"X-Cache-Lookup: HIT from $host_name";
-					} else {
-						push @o, 'X-Cache: HIT', 'X-Cache-Lookup: HIT';
-					}
-				} elsif($logger) {
-					$logger->warn(__PACKAGE__, ": Error retrieving data for key $key");
-				} else {
-					carp(__PACKAGE__, ": error retrieving data for key $key");
-				}
+			# is_cached() has already looked, and it mustn't have
+			# expired since then.  A HEAD request needs the headers too
+			$cobject ||= _cache_lookup($key);
+			if(defined($cobject)) {
+				$cache_hash = Storable::thaw($cobject->value());
+				$headers = $cache_hash->{'headers'};
+				_set_content_type($headers) if(defined($headers));
+				@o = ("X-CGI-Buffer-$VERSION: Hit", @{_x_cache_headers('HIT', 'HIT')});
+			} elsif($send_body) {
+				_problem(__PACKAGE__ . ": error retrieving data for key $key");
 			}
 
-			# Nothing has been output yet, so we can check if it's
-			# OK to send 304 if possible
-			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
-			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
-			  $generate_304 && ($status == 200) && $ENV{'HTTP_IF_MODIFIED_SINCE'} && $cobject) {
-				_check_modified_since({
-					since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
-					modified => $cobject->created_at()
-				});
-			}
 			if($send_body && ($status == 200) && defined($cache_hash)) {
-				$body = $cache_hash->{'body'};
+				$body = _to_bytes($cache_hash->{'body'});
 				if(!defined($body)) {
 					# Panic
 					$headers = 'Status: 500 Internal Server Error';
@@ -423,7 +463,7 @@ END {
 					foreach my $k (keys %{$cache_hash}) {
 						$body .= "\t$k\n";
 					}
-					$cache->remove($key);
+					_try('removing a bad entry', sub { $cache->remove($key) });
 					if($logger) {
 						$logger->error("Can't retrieve body for key $key");
 						$logger->warn($body);
@@ -432,130 +472,86 @@ END {
 						warn($body);
 					}
 					$send_body = 0;
-					$status = 500;
-					if($info) {
-						$info->status(500);
-					}
+					_set_status(500);
 				}
 			}
-			if($send_body && $ENV{'SERVER_PROTOCOL'} &&
-			  (($ENV{'SERVER_PROTOCOL'} eq 'HTTP/1.1') || ($ENV{'SERVER_PROTOCOL'} eq 'HTTP/2.0')) &&
-			  ($status == 200)) {
-				if($ENV{'HTTP_IF_NONE_MATCH'}) {
-					if(!defined($etag)) {
-						unless($encode_loaded) {
-							require Encode;
-							$encode_loaded = 1;
-						}
-						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-					}
-					if($logger && $generate_304) {
-						$logger->debug("Compare etags $ENV{HTTP_IF_NONE_MATCH} and $etag");
-					}
-					if(($ENV{'HTTP_IF_NONE_MATCH'} eq $etag) && $generate_304) {
-						push @o, 'Status: 304 Not Modified';
-						$status = 304;
-						$send_body = 0;
-						if($logger) {
-							$logger->debug('Set status to 304');
-						}
-					}
-				}
+			if($send_body && ($status == 200) && $generate_etag && ((!defined($headers)) || ($headers !~ /^ETag:/mi))) {
+				_generate_etag();
 			}
-			if($status == 200) {
-				$encoding = _should_gzip();
-				if($send_body) {
-					if($generate_etag && !defined($etag) && defined($body) && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
-						$etag = '"' . Digest::MD5->new->add(Encode::encode_utf8($body))->hexdigest() . '"';
-					}
-					_compress({ encoding => $encoding });
-				}
-			}
-			my $cannot_304 = !$generate_304;
 			unless($etag) {
-				if(defined($headers) && ($headers =~ /^ETag: "([a-z0-9]{32})"/m)) {
+				# Keep the quotes, they're part of the ETag and
+				# If-None-Match includes them
+				if(defined($headers) && ($headers =~ /^ETag:\s*("[^"]*")/mi)) {
 					$etag = $1;
-				} else {
+				} elsif($cache_hash) {
 					$etag = $cache_hash->{'etag'};
 				}
 			}
-			if($ENV{'HTTP_IF_NONE_MATCH'} && $send_body && ($status != 304) && $generate_304) {
-				if($logger) {
-					$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
-				}
-				if(defined($etag) && ($etag eq $ENV{'HTTP_IF_NONE_MATCH'}) && ($status == 200)) {
-					push @o, 'Status: 304 Not Modified';
-					$send_body = 0;
-					$status = 304;
-					if($info) {
-						$info->status(304);
+			# Nothing has been output yet, so we can check if it's OK to
+			# send 304 if possible.
+			# RFC 9110 13.1.3 says not to look at the date if there's
+			# an If-None-Match.
+			# _check_modified_since() checks generate_304 itself
+			if($status == 200) {
+				if($ENV{'HTTP_IF_NONE_MATCH'} && defined($etag)) {
+					if($generate_304) {
+						_check_if_none_match();
 					}
-					if($logger) {
-						$logger->debug('Set status to 304');
-					}
-				} else {
-					$cannot_304 = 1;
-				}
-			}
-			if($cobject) {
-				if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && !$cannot_304) {
+				} elsif($ENV{'HTTP_IF_MODIFIED_SINCE'} && $cobject) {
 					_check_modified_since({
 						since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
 						modified => $cobject->created_at()
 					});
 				}
-				if(($status == 200) && $generate_last_modified) {
-					if($logger) {
-						$logger->debug('Set Last-Modified to ', HTTP::Date::time2str($cobject->created_at()));
-					}
-					push @o, 'Last-Modified: ' . HTTP::Date::time2str($cobject->created_at());
+			}
+			# A 304 has no body to compress, and mustn't say that it has
+			if(($status == 200) && $send_body) {
+				$encoding = _should_gzip();
+				_compress({ encoding => $encoding });
+			}
+			if($cobject && ($status == 200) && $generate_last_modified) {
+				if($logger) {
+					$logger->debug('Set Last-Modified to ', HTTP::Date::time2str($cobject->created_at()));
 				}
+				push @o, 'Last-Modified: ' . HTTP::Date::time2str($cobject->created_at());
 			}
 		} else {
 			# Not in the server side cache
-			if(($status == 200) && _is_storable($headers, $unzipped_body)) {
+			if($status == 200) {
 				unless($cache_duration) {
 					# It would be great if CHI::set()
 					# allowed the time to be 'lru' for least
 					# recently used.
 					$cache_duration = '10 minutes';
 				}
-				$cache_hash->{'body'} = $unzipped_body;
-				if(@o && defined($o[0])) {
+				my $storable = _is_storable($headers, $unzipped_body);
+				if($storable) {
+					$cache_hash->{'body'} = $unzipped_body;
+
 					# Remember, we're storing the UNzipped
-					# version in the cache
-					my $c;
-					if(defined($headers) && length($headers)) {
-						$c = $headers . "\r\n" . join("\r\n", @o);
-					} else {
-						$c = join("\r\n", @o);
+					# version in the cache, so leave out what's
+					# about this response's encoding and length.
+					# Blank lines would end the headers
+					my @stored = grep {
+						length && !/^(?:Content-Encoding|Content-Length|Content-Range):/i &&
+						!/^Vary:\s*Accept-Encoding\s*$/i
+					} ((defined($headers) ? split(/\r?\n/, $headers) : ()), @o);
+					if(scalar(@stored)) {
+						$cache_hash->{'headers'} = join("\r\n", @stored);
 					}
-					$c =~ s/^Content-Encoding: .+$//mg;
-					$c =~ s/^Vary: Accept-Encoding.*\r?$//mg;
-					$c =~ s/\n+/\n/gs;
-					if(length($c)) {
-						$cache_hash->{'headers'} = $c;
+					if($generate_etag) {
+						_generate_etag();
+						$cache_hash->{'etag'} = $etag;
 					}
-				} elsif(defined($headers) && length($headers)) {
-					$headers =~ s/^Content-Encoding: .+$//mg;
-					$headers =~ s/^Vary: Accept-Encoding.*\r?$//mg;
-					$headers =~ s/\n+/\n/gs;
-					if(length($headers)) {
-						$cache_hash->{'headers'} = $headers;
+					if($logger) {
+						$logger->debug("Store $key in the cache, age = $cache_duration ", length($cache_hash->{'body'}), ' bytes');
 					}
+					_try('storing in the cache', sub {
+						$cache->set($key, Storable::freeze($cache_hash), $cache_duration);
+					});
 				}
-				if($generate_etag && defined($etag)) {
-					$cache_hash->{'etag'} = $etag;
-				}
-				# TODO: Support the Expires header
-				# if($headers !~ /^Expires: /m))) {
-				# }
-				if($logger) {
-					$logger->debug("Store $key in the cache, age = $cache_duration ", length($cache_hash->{'body'}), ' bytes');
-				}
-				$cache->set($key, Storable::freeze($cache_hash), $cache_duration);
 				if($generate_last_modified) {
-					$cobject = $cache->get_object($key);
+					$cobject = $storable ? _cache_lookup($key) : undef;
 					if(defined($cobject)) {
 						push @o, 'Last-Modified: ' . HTTP::Date::time2str($cobject->created_at());
 					} else {
@@ -563,83 +559,57 @@ END {
 					}
 				}
 			}
-			if($info) {
-				my $host_name = $info->host_name();
-				if(defined($x_cache)) {
-					push @o, "X-Cache: $x_cache from $host_name";
-				} else {
-					push @o, "X-Cache: MISS from $host_name";
-				}
-				push @o, "X-Cache-Lookup: MISS from $host_name";
-			} else {
-				if(defined($x_cache)) {
-					push @o, "X-Cache: $x_cache";
-				} else {
-					push @o, 'X-Cache: MISS';
-				}
-				push @o, 'X-Cache-Lookup: MISS';
-			}
-			push @o, "X-CGI-Buffer-$VERSION: Miss";
+			push @o, @{_x_cache_headers(defined($x_cache) ? $x_cache : 'MISS', 'MISS')}, "X-CGI-Buffer-$VERSION: Miss";
 		}
 		# We don't need it any more, so give Perl a chance to
 		# tidy it up seeing as we're in the destructor
 		$cache = undef;
-	} elsif($info) {
-		my $host_name = $info->host_name();
-		push @o, ("X-Cache: MISS from $host_name", "X-Cache-Lookup: MISS from $host_name");
-		if($generate_last_modified) {
+	} else {
+		push @o, @{_x_cache_headers('MISS', 'MISS')};
+		if($info && $generate_last_modified) {
 			if(my $age = _my_age()) {
 				push @o, 'Last-Modified: ' . HTTP::Date::time2str($age);
 			}
 		}
-		if($ENV{'HTTP_IF_MODIFIED_SINCE'} && ($status != 304) && $generate_304) {
-			_check_modified_since({
-				since => $ENV{'HTTP_IF_MODIFIED_SINCE'},
-				modified => _my_age()
-			});
-		}
-	} else {
-		push @o, ('X-Cache: MISS', 'X-Cache-Lookup: MISS');
 	}
-	if($generate_etag && ((!defined($headers)) || ($headers !~ /^ETag: /m))) {
-		if(defined($etag)) {
-			push @o, "ETag: $etag";
-			if($logger) {
-				$logger->debug("Set ETag to $etag");
-			}
-		} elsif($logger && (($status == 200) || $status == 304) && $body && !is_cached()) {
-			$logger->warn("BUG: ETag not generated, status $status");
+
+	_add_vary($headers);
+
+	if($generate_etag && defined($etag) && ((!defined($headers)) || ($headers !~ /^ETag:/mi))) {
+		# The compressed and the uncompressed versions aren't the same
+		# bytes, so can't have the same strong ETag.
+		# _check_if_none_match() removes the suffix again, and a 304 is
+		# about the copy that the client has so gives back its ETag
+		my $e = defined($matched_etag) ? $matched_etag : $etag;
+		if($content_encoding && !defined($matched_etag)) {
+			$e =~ s/"$/-$content_encoding"/;
+		}
+		push @o, "ETag: $e";
+		if($logger) {
+			$logger->debug("Set ETag to $e");
 		}
 	}
 
-	my $body_length;
+	my $body_length = 0;
 	if(defined($body)) {
-		if(utf8::is_utf8($body)) {
-			utf8::encode($body);
-		}
+		$body = _to_bytes($body);
 		$body_length = length($body);
-	} else {
-		$body_length = 0;
 	}
 
 	if(defined($headers) && length($headers)) {
 		# Put the original headers first, then those generated within
-		# CGI::Buffer
-		unshift @o, split(/\r\n/, $headers);
-		if($body && $send_body) {
-			if(scalar(grep(/^Content-Length: \d/, @o)) == 0) {
-				push @o, "Content-Length: $body_length";
-			}
-		}
-		if(scalar(grep(/^Status: \d/, @o)) == 0) {
-			require HTTP::Status;
-			HTTP::Status->import();
+		# CGI::Buffer.  The script is free to end its lines with \n
+		unshift @o, grep { length } split(/\r?\n/, $headers);
 
-			push @o, "Status: $status " . HTTP::Status::status_message($status);
-			if($info) {
-				$info->status($status);
-			}
+		# The body may well have changed since the script worked out its
+		# length
+		if(defined($body)) {
+			@o = grep { !/^Content-Length:/i } @o;
 		}
+		if($body_length && $send_body) {
+			push @o, "Content-Length: $body_length";
+		}
+		_set_status_header();
 	} else {
 		push @o, "X-CGI-Buffer-$VERSION: No headers";
 	}
@@ -648,41 +618,10 @@ END {
 		push @o, ('', $body);
 	}
 
-	# XXXXXXXXXXXXXXXXXXXXXXX
-	if(0) {
-		# This code helps to debug Wide character prints
-		my $wideCharWarningsIssued = 0;
-		my $widemess;
-		$SIG{__WARN__} = sub {
-			$wideCharWarningsIssued += "@_" =~ /Wide character in .../;
-			$widemess = "@_";
-			if($logger) {
-				$logger->fatal($widemess);
-				my $i = 1;
-				$logger->trace('Stack Trace');
-				while((my @call_details = (caller($i++)))) {
-					$logger->trace($call_details[1] . ':' . $call_details[2] . ' in function ' . $call_details[3]);
-				}
-			}
-			CORE::warn(@_);	# call the builtin warn as usual
-		};
-
-		if(scalar @o) {
-			print join("\r\n", @o);
-			if($wideCharWarningsIssued) {
-				my $mess = join("\r\n", @o);
-				$mess =~ /[^\x00-\xFF]/;
-				open(my $fout, '>>', '/tmp/NJH');
-				print $fout "$widemess:\n";
-				print $fout $mess;
-				print $fout 'x' x 40, "\n";
-				close $fout;
-			}
-		}
-	} elsif(scalar @o) {
+	$sent = 1;
+	if(scalar @o) {
 		print join("\r\n", @o);
 	}
-	# XXXXXXXXXXXXXXXXXXXXXXX
 
 	if((!$send_body) || !defined($body)) {
 		print "\r\n\r\n";
@@ -697,6 +636,9 @@ sub _check_modified_since {
 	if(!$generate_304) {
 		return;
 	}
+	# RFC 9110 13.1.3: If-Modified-Since is ignored for other methods
+	return unless(_is_safe_method());
+
 	my $params = shift;
 
 	if(!defined($$params{since})) {
@@ -725,7 +667,7 @@ sub _check_modified_since {
 	}
 	if($$params{modified} <= $s) {
 		push @o, 'Status: 304 Not Modified';
-		$status = 304;
+		_set_status(304);
 		$send_body = 0;
 		if($logger) {
 			$logger->debug('Set status to 304');
@@ -737,26 +679,30 @@ sub _check_modified_since {
 sub _optimise_content {
 	# FIXME: regex bad, HTML parser good
 	# Regexp::List - wow!
-	$body =~ s/(((\s+|\r)\n|\n(\s+|\+)))/\n/g;
-	# $body =~ s/\r\n/\n/gs;
-	# $body =~ s/\s+\n/\n/gs;
-	# $body =~ s/\n+/\n/gs;
-	# $body =~ s/\n\s+|\s+\n/\n/g;
+	# Remove whitespace around newlines.  Possessive quantifiers and only
+	# starting at the beginning of a run of whitespace keep it linear.
+	# A "+" at the start of a line is JavaScript, so is left alone
+	$body =~ s{
+		(?<![^\S\n])	# start only at the beginning of a whitespace run
+		[^\S\n]*+	# trailing spaces, tabs and \r before the newline
+		\n
+		\s*+		# blank lines and indentation after it
+	}{\n}gx;
 	$body =~ s/\<\/div\>\s+\<div/\<\/div\>\<div/gis;
-	# $body =~ s/\<\/p\>\s\<\/div/\<\/p\>\<\/div/gis;
-	# $body =~ s/\<div\>\s+/\<div\>/gis;	# Remove spaces after <div>
-	$body =~ s/(<div>\s+|\s+<div>)/<div>/gis;
+	# In these, (?<!\s) and possessive quantifiers stop each alternation
+	# being retried at every position inside a long run of whitespace
+	$body =~ s/(?:<div>\s++|(?<!\s)\s++<div>)/<div>/gi;
 	$body =~ s/\s+<\/div\>/\<\/div\>/gis;	# Remove spaces before </div>
-	$body =~ s/\s+\<p\>|\<p\>\s+/\<p\>/im;	# TODO <p class=
-	$body =~ s/\s+\<\/p\>|\<\/p\>\s+/\<\/p\>/gis;
+	$body =~ s/(?:(?<!\s)\s++<p>|<p>\s++)/<p>/i;	# TODO <p class=
+	$body =~ s/(?:(?<!\s)\s++<\/p>|<\/p>\s++)/<\/p>/gi;
 	$body =~ s/<html>\s+<head>/<html><head>/is;
-	$body =~ s/\s*<\/head>\s+<body>\s*/<\/head><body>/is;
+	$body =~ s/(?<!\s)\s*+<\/head>\s++<body>\s*+/<\/head><body>/i;
 	$body =~ s/<html>\s+<body>/<html><body>/is;
 	$body =~ s/<body>\s+/<body>/is;
 	$body =~ s/\s+\<\/html/\<\/html/is;
 	$body =~ s/\s+\<\/body/\<\/body/is;
-	$body =~ s/\s(\<.+?\>\s\<.+?\>)/$1/;
-	# $body =~ s/(\<.+?\>\s\<.+?\>)\s/$1/g;
+	# Spaces between tags can be visible, e.g. "Hello <b>world</b>", so
+	# they're only removed around the block elements below
 	$body =~ s/\<p\>\s/\<p\>/gi;
 	$body =~ s/\<\/p\>\s\<p\>/\<\/p\>\<p\>/gi;
 	$body =~ s/\<\/tr\>\s\<tr\>/\<\/tr\>\<tr\>/gi;
@@ -764,7 +710,7 @@ sub _optimise_content {
 	$body =~ s/\<\/td\>\s*\<td\>/\<\/td\>\<td\>/gis;
 	$body =~ s/\<\/tr\>\s\<\/table\>/\<\/tr\>\<\/table\>/gi;
 	$body =~ s/\<br\s?\/?\>\s?\<p\>/\<p\>/gi;
-	$body =~ s/\<br\>\s/\<br\>/gi;
+	$body =~ s/\<br\>\s+/\<br\>/gi;
 	$body =~ s/\s+\<br/\<br/gi;
 	$body =~ s/\<br\s?\/\>\s/\<br \/\>/gi;
 	$body =~ s/[ \t]+/ /gs;	# Remove duplicate space, don't use \s+ it breaks JavaScript
@@ -773,18 +719,31 @@ sub _optimise_content {
 	$body =~ s/(<script>\s|\s<script>)/<script>/gis;
 	$body =~ s/(<\/script>\s|\s<\/script>)/<\/script>/gis;
 	$body =~ s/\<td\>\s/\<td\>/gi;
-	$body =~ s/\s+\<a\shref="(.+?)"\>\s?/ <a href="$1">/gis;
-	$body =~ s/\s?<a\shref=\s"(.+?)"\>/ <a href="$1">/gis;
+	# The link can't leave its quotes, so these can't span tags or
+	# backtrack across the rest of the page
+	$body =~ s{
+		(?<!\s)\s++		# a whole run of whitespace, starting at its first character
+		<a\shref="([^"]*+)">	# $1: the link
+		\s?
+	}{ <a href="$1">}gix;
+	$body =~ s{
+		\s?
+		<a\shref=\s"([^"]*+)">	# $1: the link
+	}{ <a href="$1">}gix;
 	$body =~ s/\s+<\/a\>\s+/<\/a> /gis;
-	$body =~ s/(\s?<hr>\s+|\s+<hr>\s?)/<hr>/gis;
-	# $body =~ s/\s<hr>/<hr>/gis;
-	# $body =~ s/<hr>\s/<hr>/gis;
+	$body =~ s/(?:\s?<hr>\s++|(?<!\s)\s++<hr>\s?)/<hr>/gi;
 	$body =~ s/<\/li>\s+<li>/<\/li><li>/gis;
 	$body =~ s/<\/li>\s+<\/ul>/<\/li><\/ul>/gis;
 	$body =~ s/<ul>\s+<li>/<ul><li>/gis;
 	$body =~ s/\s+<\/li>/<\/li>/gis;
 	$body =~ s/\<\/option\>\s+\<option/\<\/option\>\<option/gis;
-	$body =~ s/<title>\s*(.+?)\s*<\/title>/<title>$1<\/title>/is;
+	# A title can't contain a tag.  [^<] and the possessive quantifiers stop
+	# each unterminated <title> from being searched to the end of the page
+	$body =~ s{<title>\s*+([^<]*+)</title>}{
+		my $title = $1;
+		$title =~ s/(?<!\s)\s++\z//;
+		"<title>$title</title>"
+	}eix;
 	$body =~ s/<\/center>\s+<center>/ /gis;
 }
 
@@ -911,6 +870,7 @@ sub init {
 	}
 	if(defined($params{logger})) {
 		$logger = $params{logger};
+		_check_logger();
 	}
 	if(defined($params{lingua})) {
 		$lingua = $params{lingua};
@@ -1075,7 +1035,7 @@ sub is_cached {
 	if($logger) {
 		$logger->debug("is_cached: looking for key = $key");
 	}
-	$cobject = $cache->get_object($key);
+	$cobject = _cache_lookup($key);
 	unless($cobject) {
 		if($logger) {
 			$logger->debug('not found in cache');
@@ -1122,46 +1082,55 @@ sub is_cached {
 
 # Determine the last modification time of the script and cache it for subsequent calls
 sub _my_age {
-	if($script_mtime) {
-		return $script_mtime;
-	}
-	unless(defined($info)) {
-		if($cache) {
-			$info = CGI::Info->new({ cache => $cache })
-				or croak 'Failed to create CGI::Info object with cache';
-		} else {
-			$info = CGI::Info->new() or croak 'Failed to create CGI::Info object';
-		}
-	}
+	return $script_mtime if(defined($script_mtime));
 
-	my $path = $info->script_path();
-	unless(defined($path)) {
-		croak 'Failed to retrieve script path';
-		return;
-	}
+	# croak() never returns, so nothing is needed after it
+	my $path = _info()->script_path();
+	croak 'Failed to retrieve script path' unless(defined($path));
 
 	my @statb = stat($path);
 	$script_mtime = $statb[9];	# Set script_mtime to the modification time of the script
 	return $script_mtime;
 }
 
+# Return the content encoding to use, or '' for none.
+# Premise 1: _compress() fails the request with a 406 if it can't load the
+#	module for the encoding
+# Premise 2: the client is happy with any of the encodings it lists
+# Conclusion: choose the first listed encoding that can be loaded, then the 406
+#	can't happen
 sub _should_gzip
 {
-	if($compress_content && ($ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'})) {
-		if(scalar(@content_type)) {
-			if($content_type[0] ne 'text') {
-				return '';
-			}
-		}
-		my $accept = lc($ENV{'HTTP_ACCEPT_ENCODING'} ? $ENV{'HTTP_ACCEPT_ENCODING'} : $ENV{'HTTP_TE'});
-		foreach my $method(split(/,\s?/, $accept)) {
-			if(($method eq 'gzip') || ($method eq 'x-gzip') || ($method eq 'br') || ($method eq 'zstd')) {
-				return $method;
-			}
-		}
+	return '' unless($compress_content);
+	my $accept = $ENV{'HTTP_ACCEPT_ENCODING'} || $ENV{'HTTP_TE'};
+	return '' unless($accept);
+	return '' if(defined($content_type[0]) && (lc($content_type[0]) ne 'text'));
+	return '' if($script_encoded);	# It would be compressed twice
+
+	foreach my $method(split(/\s*,\s*/, lc($accept))) {
+		# e.g. "gzip;q=0.8", where q=0 means "not acceptable"
+		my ($name, @params) = split(/\s*;\s*/, $method);
+		next unless(defined($name));
+		next if(grep { /^q=0(?:\.0*)?$/ } @params);
+		return $name if($ENCODING_MODULE{$name} && _can_load($ENCODING_MODULE{$name}));
 	}
 
 	return '';
+}
+
+# Can the given module be loaded?  The answer is remembered
+{
+	my %loadable;
+
+	sub _can_load
+	{
+		my $module = shift;
+
+		if(!exists($loadable{$module})) {
+			$loadable{$module} = eval "require $module; 1" ? 1 : 0;
+		}
+		return $loadable{$module};
+	}
 }
 
 sub _set_content_type
@@ -1170,70 +1139,348 @@ sub _set_content_type
 
 	foreach my $header (split(/\r?\n/, $headers)) {
 		my ($header_name, $header_value) = split /\:\s*/, $header, 2;
-		if (lc($header_name) eq 'content-type') {
+		next unless(defined($header_name) && defined($header_value));
+		if(lc($header_name) eq 'content-type') {
 			@content_type = split /\//, $header_value, 2;
-			last;
+		} elsif((lc($header_name) eq 'content-encoding') && (lc($header_value) !~ /^\s*identity\s*$/)) {
+			$script_encoded = 1;
 		}
 	}
 }
 
+# Compress the body with the given encoding, from _should_gzip()
 sub _compress {
 	my %params = ref $_[0] eq 'HASH' ? %{ $_[0] } : @_;
-	return unless defined $body;
 
 	my $encoding = $params{encoding};
-	return if(!$encoding || length($body) < $MIN_GZIP_LEN);
 
-	# Ensure UTF-8 encoding is handled
-	my $encode_utf8 = sub {
-		# Avoid 'Wide character in memGzip'
-		# state $encode_loaded = do {
-			# require Encode;
-			# 1;
-		# };
-		require Encode;
-		Encode::encode_utf8(shift);
-	};
+	# This can be called again, by which time the body is no longer compressed
+	$content_encoding = undef;
+	@o = grep { !/^Content-Encoding:/ } @o;
 
-	# Common logic for setting headers
-	my $set_headers = sub {
-		my $encoding = shift;
-		push @o, "Content-Encoding: $encoding", 'Vary: Accept-Encoding';
-	};
+	return unless(defined($body) && defined($encoding) && length($encoding));
+	return if(length($body) < $MIN_GZIP_LEN);
 
-	# Gzip compression
-	if($encoding eq 'gzip') {
-		require Compress::Zlib;
-		my $compressed_body = Compress::Zlib::memGzip(\$encode_utf8->($body));
-		if(length($compressed_body) < length($body)) {
-			$body = $compressed_body;
-			$set_headers->($encoding);
-		}
-	} elsif($encoding eq 'zstd') {
+	# Premise: _should_gzip() only returns encodings whose module loads
+	# Conclusion: if one can't be loaded here, the request can't be met
+	my $module = $ENCODING_MODULE{$encoding};
+	if((!defined($module)) || !_can_load($module)) {
+		_set_status(406);
+		return;
+	}
+
+	# Avoid 'Wide character in memGzip'
+	my $bytes = _to_bytes($body);
+	my $compressed;
+	if($module eq 'Compress::Zlib') {
+		$compressed = Compress::Zlib::memGzip(\$bytes);
+	} elsif($module eq 'Compress::Zstd') {
 		# Facebook
-		if(eval { require Compress::Zstd; 1 }) {
-			my $compressed_body = Compress::Zstd::compress(\$encode_utf8->($body));
-			if(length($compressed_body) < length($body)) {
-				$body = $compressed_body;
-				$set_headers->($encoding);
-			}
-		} else {
-			$status = 406;
-			$info->status(406) if($info);
+		$compressed = Compress::Zstd::compress(\$bytes);
+	} else {
+		$compressed = IO::Compress::Brotli::bro($bytes);
+	}
+
+	# Don't send it compressed if that makes it larger
+	return unless(defined($compressed) && (length($compressed) < length($bytes)));
+
+	$body = $compressed;
+	$encoding = 'gzip' if($encoding eq 'x-gzip');
+	$content_encoding = $encoding;
+	foreach my $header("Content-Encoding: $encoding", 'Vary: Accept-Encoding') {
+		push @o, $header unless(grep { $_ eq $header } @o);
+	}
+}
+
+sub _generate_etag {
+	return if(defined($etag));
+	return unless(defined($body));
+
+	# bytes to avoid "Wide character in subroutine entry"
+	$etag = '"' . Digest::MD5->new->add(_to_bytes($body))->hexdigest() . '"';
+	if($logger) {
+		$logger->debug("Etag = $etag");
+	}
+}
+
+sub _check_if_none_match {
+	if($ENV{'HTTP_IF_NONE_MATCH'} && defined($etag)) {
+		if($logger) {
+			$logger->debug("Compare $ENV{HTTP_IF_NONE_MATCH} with $etag");
 		}
-	} elsif($encoding eq 'br') {
-		# Brotli compression
-		if(eval { require IO::Compress::Brotli; 1 }) {
-			my $compressed_body = IO::Compress::Brotli::bro($encode_utf8->($body));
-			if(length($compressed_body) < length($body)) {
-				$body = $compressed_body;
-				$set_headers->($encoding);
+		# The header is "*" or a list of entity tags, any of which may be
+		# weak.  If-None-Match uses the weak comparison (RFC 9110 8.8.3.2),
+		# under which the compressed version of a page matches
+		my $matched = 0;
+		foreach my $tag(split(/\s*,\s*/, $ENV{'HTTP_IF_NONE_MATCH'})) {
+			(my $client_etag = $tag) =~ s/^W\///;
+			(my $e = $client_etag) =~ s/$ENCODED_ETAG_SUFFIX/"/;
+			if($e eq $etag) {
+				$matched_etag = $client_etag;
+				$matched = 1;
+				last;
 			}
-		} else {
-			$status = 406;
-			$info->status(406) if($info);
+			$matched = 1 if($e eq '*');
+		}
+		if($matched) {
+			# RFC 9110 13.1.2: 304 is only for GET and HEAD
+			my $s = _is_safe_method() ? 304 : 412;
+			require HTTP::Status;
+			push @o, "Status: $s " . HTTP::Status::status_message($s);
+			$send_body = 0;
+			_set_status($s);
+			if($logger) {
+				$logger->debug("Set status to $s");
+			}
+			return 1;
 		}
 	}
+	if($cache && $logger && $logger->can('is_debug') && $logger->is_debug() && _can_load('Text::Diff')) {
+		_try('comparing with the cache', sub {
+			my $cached_copy = $cache->get(_generate_key());
+
+			if($cached_copy && $body) {
+				require Storable;
+
+				$cached_copy = Storable::thaw($cached_copy)->{body};
+				$logger->debug('diffs: ', Text::Diff::diff(\$body, \$cached_copy));
+			} else {
+				$logger->debug('Nothing to compare');
+			}
+		});
+	}
+	return 0;
+}
+
+# Run some code which isn't essential to sending the page, e.g. something using
+# the cache.  If it fails, give a warning and return undef
+sub _try {
+	my ($what, $code) = @_;
+
+	my $rc;
+	return $rc if(eval { $rc = $code->(); 1 });
+	_problem(__PACKAGE__ . ": $what failed: $@");
+	return;
+}
+
+# Report something which has gone wrong.  This can be called from anywhere, so
+# the logger itself may be the thing that's failing
+sub _problem {
+	my $message = shift;
+
+	if($logger) {
+		return if(eval { $logger->warn($message); 1 });
+	}
+	# Must be Carp::carp instead of carp for Test::Carp
+	Carp::carp($message);
+}
+
+# Check that the logger can do what will be asked of it, otherwise forget it.
+# AUTOLOAD is taken on trust
+sub _check_logger {
+	foreach my $method(@LOGGER_METHODS) {
+		next if(Scalar::Util::blessed($logger) && ($logger->can($method) || $logger->can('AUTOLOAD')));
+		$logger = undef;
+		_problem(__PACKAGE__ . ": The logger doesn't understand $method()");
+		return;
+	}
+}
+
+# Look for an entry in the cache that can still be used.  A failing cache is the
+# same as an empty one.
+# CHI's get_object() returns an object even if it has expired
+sub _cache_lookup {
+	my $key = shift;
+
+	my $object = _try('reading the cache', sub { return $cache->get_object($key) });
+	return unless(defined($object));
+	if($object->can('is_expired') && $object->is_expired()) {
+		if($logger) {
+			$logger->debug("$key has expired");
+		}
+		return;
+	}
+	return $object;
+}
+
+# A string as bytes: a string of characters is encoded, bytes are left alone
+sub _to_bytes {
+	my $string = shift;
+
+	utf8::encode($string) if(defined($string) && utf8::is_utf8($string));
+	return $string;
+}
+
+# Is the output an HTML page?
+sub _is_html {
+	return 0 unless(defined($content_type[0]) && defined($content_type[1]));
+	return ((lc($content_type[0]) eq 'text') && (lc($content_type[1]) =~ /^html/)) ? 1 : 0;
+}
+
+# Stop the regular expressions from changing the contents of <pre> and <textarea>
+# by swapping them for a marker.  Returns what's needed to put them back.
+# The end of a tag is only looked for once if it isn't there, so that hostile
+# input can't make this quadratic
+sub _protect_preformatted {
+	my $marker = 'CGIBUFFERPRESERVED' . int(rand(1_000_000_000)) . 'N';
+	my (@saved, %no_end);
+	my $out = '';
+	my $last = 0;
+
+	while($body =~ /<(pre|textarea)\b/gi) {
+		my $tag = lc($1);
+		my $start = $-[0];
+		my $after = pos($body);
+
+		next if($no_end{$tag});
+		unless($body =~ /<\/$tag\s*+>/gi) {
+			$no_end{$tag} = 1;
+			pos($body) = $after;
+			next;
+		}
+		my $end = $+[0];
+		push @saved, substr($body, $start, $end - $start);
+		$out .= substr($body, $last, $start - $last) . $marker . $#saved . 'X';
+		$last = $end;
+		pos($body) = $end;
+	}
+	$body = $out . substr($body, $last);
+	return { marker => $marker, saved => \@saved };
+}
+
+# Put back what _protect_preformatted() took out
+sub _restore_preformatted {
+	my $preformatted = shift;
+
+	my $saved = $preformatted->{'saved'};
+	$body =~ s/\Q$preformatted->{marker}\E(\d+)X/$saved->[$1]/g if(scalar(@{$saved}));
+}
+
+# Tell caches that what's sent depends on what the client accepts.  This is also
+# needed when the output isn't compressed, or that's what a cache would then give
+# to clients that can take it compressed
+sub _add_vary {
+	my $headers = shift;
+
+	return unless(defined($headers) && length($headers));
+	return unless($compress_content && defined($body) && !$script_encoded);
+	return if(defined($content_type[0]) && (lc($content_type[0]) ne 'text'));
+	return if($headers =~ /^Vary:.*\baccept-encoding\b/mi);
+	return if(grep { /^Vary:.*\baccept-encoding\b/i } @o);
+	push @o, 'Vary: Accept-Encoding';
+}
+
+# Send one Status header, that of the status we've ended up with, keeping the
+# script's one if it's the same since it may have its own wording
+sub _set_status_header {
+	my $found = 0;
+	@o = grep {
+		my $keep = 1;
+		if(/^Status:\s*(\d+)/i) {
+			$keep = (!$found) && ($1 == $status);
+			$found ||= $keep;
+		}
+		$keep
+	} @o;
+
+	unless($found) {
+		require HTTP::Status;
+		HTTP::Status->import();
+
+		push @o, "Status: $status " . HTTP::Status::status_message($status);
+		_set_status($status);
+	}
+}
+
+# If-Range asks for a part only if the client's copy is the current one
+# (RFC 9110 14.5), which needs an exact match of a strong validator
+sub _if_range_matches {
+	my $if_range = $ENV{'HTTP_IF_RANGE'};
+	return 1 unless(defined($if_range) && length($if_range));
+
+	if($if_range =~ /^(?:W\/)?"/) {
+		_generate_etag();
+		return (defined($etag) && ($if_range eq $etag)) ? 1 : 0;
+	}
+	my $since = HTTP::Date::str2time($if_range);
+	return 0 unless(defined($since) && $info);
+	my $age = _my_age();
+	return (defined($age) && ($age == $since)) ? 1 : 0;
+}
+
+# The CGI::Info object, which is created if it wasn't given
+sub _info {
+	if(!defined($info)) {
+		$info = CGI::Info->new($cache ? { cache => $cache } : ())
+			or croak(__PACKAGE__, ': Failed to create CGI::Info object');
+	}
+	return $info;
+}
+
+# Set the HTTP status, and tell CGI::Info if we have one
+sub _set_status {
+	$status = shift;
+	if($info) {
+		$info->status($status);
+	}
+}
+
+# Does the protocol support conditional requests (ETag etc.)?
+sub _is_conditional_protocol {
+	return defined($ENV{'SERVER_PROTOCOL'}) && ($ENV{'SERVER_PROTOCOL'} =~ $CONDITIONAL_PROTOCOL);
+}
+
+sub _is_get {
+	return (!defined($ENV{'REQUEST_METHOD'})) || ($ENV{'REQUEST_METHOD'} eq 'GET');
+}
+
+# The X-Cache and X-Cache-Lookup headers, as an arrayref
+sub _x_cache_headers {
+	my ($c, $lookup) = @_;
+
+	my $from = $info ? ' from ' . $info->host_name() : '';
+	return [ "X-Cache: $c$from", "X-Cache-Lookup: $lookup$from" ];
+}
+
+# Work out the response to a Range header, as a hashref of the new status,
+# body and Content-Range header, or undef if the range isn't one that we
+# support, in which case the header is ignored and the whole body is sent.
+# Only a single range of bytes is supported.
+#	206: the part of the body asked for
+#	416: a valid range which is outside of the body, so has no body
+sub _apply_range {
+	my ($b, $range) = @_;
+
+	return unless($range =~ /^bytes=(\d*)-(\d*)$/);
+	my ($first, $last) = ($1, $2);
+	my $length = length($b);
+
+	# "bytes=-" says nothing
+	return if(($first eq '') && ($last eq ''));
+
+	# A backwards range is invalid, so is ignored (RFC 7233 2.1)
+	return if(($first ne '') && ($last ne '') && ($first > $last));
+
+	if($first eq '') {
+		# "bytes=-n" is the last n bytes, all of it if there are
+		# fewer than n.  The last 0 bytes can't be satisfied
+		$first = ($last >= $length) ? 0 : $length - $last;
+		$last = $length - 1;
+	} elsif(($last eq '') || ($last >= $length)) {
+		# A range past the end stops at the end
+		$last = $length - 1;
+	}
+
+	# A range starting at or after the end can't be satisfied
+	if(($first >= $length) || ($first > $last)) {
+		return { status => 416, content_range => "bytes */$length" };
+	}
+
+	return {
+		status => 206,
+		body => substr($b, $first, $last - $first + 1),
+		content_range => "bytes $first-$last/$length",
+	};
 }
 
 # The values of a header in a block of headers
@@ -1447,7 +1694,7 @@ The licence for cgi_buffer is:
 
     This software is provided 'as is' without warranty of any kind."
 
-The rest of the program is Copyright 2011-2025 Nigel Horne,
+The rest of the program is Copyright 2011-2026 Nigel Horne,
 and is released under the following licence: GPL2
 
 =cut
