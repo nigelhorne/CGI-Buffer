@@ -78,5 +78,5 @@ WriteMakefile(
 			}
 		},
 	},
-	MIN_PERL_VERSION	=> '5.14.0',	# For IO::Compress::Brotli
+	MIN_PERL_VERSION	=> '5.26.0',	# CGI::Info's dependencies, e.g. Params::Validate::Strict
 );

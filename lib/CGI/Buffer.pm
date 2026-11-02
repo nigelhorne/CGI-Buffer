@@ -4,7 +4,7 @@ package CGI::Buffer;
 # script ends (in the END block) verifies, optimises, compresses and caches
 # it before sending it to the web server.
 
-use 5.14.0;	# For IO::Compress::Brotli
+use 5.26.0;	# CGI::Info's dependencies, e.g. Params::Validate::Strict, need it
 use strict;
 use warnings;
 
@@ -242,9 +242,8 @@ BEGIN {
 }
 
 END {
-	if(defined($^V) && ($^V ge 'v5.14.0')) {
-		return if ${^GLOBAL_PHASE} eq 'DESTRUCT';	# >= 5.14.0 only
-	}
+	# Nothing can be sent while Perl is destroying everything
+	return if(${^GLOBAL_PHASE} eq 'DESTRUCT');
 
 	# Premise 1: anything from here on can fail, e.g. a logger or a cache
 	# Premise 2: until this is done, all that the process prints goes into

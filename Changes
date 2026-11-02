@@ -85,6 +85,8 @@ Revision history for CGI-Buffer
 		before href or src, e.g. <img border=0 src=...>, are shortened, and
 		whitespace around <p> tags with attributes is removed
 	[ More Bug Fixes ]
+	- Raised MIN_PERL_VERSION to 5.26, which the latest CGI::Info's dependencies
+		(e.g. Params::Validate::Strict and Log::Abstraction) need
 	- X-Cache said HIT for a page that had just been generated
 	- init(cache => undef) didn't turn the cache off
 	- When the script has changed, only the out of date entry is removed from
