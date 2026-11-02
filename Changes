@@ -1,98 +1,30 @@
 Revision history for CGI-Buffer
 
 0.89
-	Fix uninitialized variable
-	More helpful error message
-	Reduce chance of key name clash
-	Use Test::Needs for brotli
 	[ Security ]
-	- Pages for clients that have logged in (Authorization or REMOTE_USER)
-		and requests other than GET and HEAD are no longer cached
-	- Responses with Set-Cookie, or a Cache-Control of no-store, no-cache or
-		private, are no longer cached.  A Set-Cookie header was
-		being replayed to other clients
-	- A Vary on anything other than Accept-Encoding (or Accept-Language with
-		lingua) now stops a response from being cached.  The code
-		that was meant to honour it could never run
-	- A page that includes the value of the client's csrf_token cookie is no
-		longer cached, and that cookie is no longer part of the key
-	- A client's Cache-Control: max-age=99999999 kept pages in the cache
-		for years.  Values over 600 seconds are now ignored
-	- Cache-Control with more than one directive (e.g. "no-cache, max-age=0")
-		or in upper case didn't stop the cache being used
-	- HTML with no </html>, which suggests that the script died, isn't stored
-	- optimise_content: links to other sites whose names start with ours
-		(e.g. www.example.com.evil.org) were made local
-	- PATH_INFO is now part of the generated cache key
-	- Google Analytics cookies after the first weren't excluded from the
-		cache key
+	- Responses that are private to a client (logged in, POST, Set-Cookie,
+		Cache-Control: private/no-store/no-cache, Vary on other than
+		Accept-Encoding, csrf_token) are no longer cached and given to
+		other clients
+	- A client can no longer keep pages in the cache for more than 600 seconds
+	- optimise_content no longer makes links to other sites local
 	[ Bug Fixes ]
-	- Range: "bytes=-n" gave the first n bytes rather than the last n,
-		"bytes=0-n" was ignored and ranges were a byte short.  Backwards
-		ranges are ignored, unsatisfiable ones give a 416, and 206 and
-		416 responses include Content-Range.  Ranges are now in bytes,
-		only apply to GET, aren't compressed, honour If-Range, and a
-		Status header from the script no longer stops the 206
-	- A 304 no longer also has the script's Status: 200 or a
-		Content-Encoding
-	- If-Modified-Since was looked at before If-None-Match for a page in the
-		cache, so a 304 could be sent for a page that had changed
-	- If-Modified-Since could turn a 404 into a 304
-	- If-None-Match with a list of ETags, weak ETags or "*" wasn't
-		understood.  A match on other than GET and HEAD gives 412
-	- An ETag in the script's own headers lost its quotes when read from the
-		cache, so never matched If-None-Match
-	- Compressed and uncompressed output had the same strong ETag
-	- ETags weren't generated for HTTP/2 and HTTP/3 in some spellings
-	- A Content-Length from the script was kept when the body was changed
-	- Output for which the script gave a Content-Encoding was compressed again
-	- Headers ending in LF gave duplicate Status headers
-	- Vary: Accept-Encoding from the script left a blank line in the headers,
-		so the rest of them were sent as part of the body
-	- Vary: Accept-Encoding wasn't sent with uncompressed output
-	- Accept-Encoding parameters, e.g. "gzip;q=0.8", weren't understood, and
-		q=0 wasn't honoured.  A space before a comma wasn't understood
-	- If the first encoding the client accepts couldn't be loaded (e.g.
-		IO::Compress::Brotli isn't installed), a 406 was sent instead of
-		trying the next
-	- Content-Type "Text/html" wasn't compressed
-	- UTF-8 that a script printed as bytes was encoded twice when compressed
-	- Entries in the cache were used after they had expired
-	- An exception while sending the page lost the output.  Failures of the
-		cache or the logger now give a warning and the page is still sent
-	- Nothing in the END block was logged, since the logger was removed
-		first.  A logger that doesn't understand all of the methods is
-		ignored
-	- Text::Diff is only loaded when debugging
-	- optimise_content: changed the contents of <pre> and <textarea>
-	- optimise_content: "+" at the start of a line was deleted, breaking
-		JavaScript
-	- optimise_content: no longer removes visible spaces between tags
-	- optimise_content: document.write() calls in different <script>
-		blocks could be merged, and the script's type was changed
-	- optimise_content: several regexes took quadratic time on hostile input
+	- Reduce chance of key name clash
+	- Fix uninitialized variable
+	- Range, ETag, 304, If-None-Match and If-Modified-Since now follow
+		RFC 9110
+	- Many fixes to headers, compression, UTF-8 and the cache
+	- optimise_content: fixed changes it made to how pages look or work,
+		e.g. in <pre> and JavaScript, and slowness on hostile input
+	- An error while sending the page no longer loses the output
+	- Use Test::Needs for brotli
 	[ Enhancements ]
-	- CGI::Info, HTTP::Date and HTTP::Status are only loaded when needed.  A
-		request that doesn't use the server-side cache or optimise_content
-		takes about 44ms rather than 160ms.  A script that uses CGI::Info
-		must now load it itself
-	- init() warns about, and ignores, options that are unknown or of the
-		wrong type, and returns "CGI::Buffer" so that calls can be chained,
-		e.g. CGI::Buffer::init(...)->is_cached()
-	- Messages can be replaced, e.g. translated, with init(messages => {...}),
-		including plural forms
-	- optimise_content: links in <a> and <img> tags with other attributes
-		before href or src, e.g. <img border=0 src=...>, are shortened, and
-		whitespace around <p> tags with attributes is removed
-	[ More Bug Fixes ]
-	- Raised MIN_PERL_VERSION to 5.26, which the latest CGI::Info's dependencies
-		(e.g. Params::Validate::Strict and Log::Abstraction) need
-	- X-Cache said HIT for a page that had just been generated
-	- init(cache => undef) didn't turn the cache off
-	- When the script has changed, only the out of date entry is removed from
-		the cache (RT104471)
-	- HTML::Lint errors are given with carp rather than warn
-	- Only HTTP_RANGE is read, not the non-standard Range environment variable
+	- Startup is about 3 times faster, since modules are only loaded when
+		needed.  A script that uses CGI::Info must now load it itself
+	- init() checks its options, can be chained, and its messages can be
+		translated
+	- MIN_PERL_VERSION is now 5.26, which CGI::Info's dependencies need
+	- More helpful error message
 
 0.88	Sun Mar 23 11:31:45 EDT 2025
 	Added support for Zstd
