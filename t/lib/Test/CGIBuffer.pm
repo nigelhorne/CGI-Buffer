@@ -50,8 +50,11 @@ sub run_script {
 		$args{code};
 	close $fout;
 
+	# Keep PERL5LIB so that modules installed with local::lib (as in CI)
+	# can still be found by the script
 	local %ENV = (
 		PATH => $ENV{'PATH'},
+		(defined($ENV{'PERL5LIB'}) ? (PERL5LIB => $ENV{'PERL5LIB'}) : ()),
 		SERVER_PROTOCOL => 'HTTP/1.1',
 		REQUEST_METHOD => 'GET',
 		SCRIPT_NAME => '/cgi-bin/script.pl',

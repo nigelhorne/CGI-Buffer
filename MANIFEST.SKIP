@@ -77,3 +77,4 @@ typescript
 # Super-linter tuning files - not for distribution
 ^\.prettierignore$
 ^\.textlintrc$
+^CLAUDE\.md$
